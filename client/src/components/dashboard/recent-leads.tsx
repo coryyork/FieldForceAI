@@ -40,7 +40,7 @@ export default function RecentLeads() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Recent Leads</CardTitle>
-          <Link href="/crm">
+          <Link href="/sales">
             <Button variant="outline" size="sm">
               View All
             </Button>
@@ -88,7 +88,7 @@ export default function RecentLeads() {
           <div className="text-center py-8">
             <Users className="w-8 h-8 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-600 dark:text-gray-400 text-sm">No leads yet</p>
-            <Link href="/crm">
+            <Link href="/sales">
               <Button size="sm" className="mt-2 bg-electric-blue hover:bg-blue-600 text-white">
                 Add Your First Lead
               </Button>
