@@ -328,6 +328,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Lead notes routes
+  app.get("/api/leads/:leadId/notes", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const notes = await storage.getLeadNotes(req.params.leadId, user.companyId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching lead notes:", error);
+      res.status(500).json({ message: "Failed to fetch lead notes" });
+    }
+  });
+
+  app.post("/api/leads/:leadId/notes", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const noteData = {
+        leadId: req.params.leadId,
+        companyId: user.companyId,
+        userId: req.user.claims.sub,
+        content: req.body.content,
+        type: req.body.type || "note",
+      };
+
+      const note = await storage.createLeadNote(noteData);
+      
+      // Log activity
+      await storage.createActivity({
+        companyId: user.companyId,
+        userId: req.user.claims.sub,
+        type: "note_created",
+        description: `Added ${noteData.type} to lead`,
+        entityType: "lead",
+        entityId: req.params.leadId,
+      });
+
+      res.json(note);
+    } catch (error) {
+      console.error("Error creating lead note:", error);
+      res.status(500).json({ message: "Failed to create lead note" });
+    }
+  });
+
+  app.put("/api/leads/:leadId/notes/:noteId", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const updates = {
+        content: req.body.content,
+        type: req.body.type,
+      };
+
+      const note = await storage.updateLeadNote(req.params.noteId, user.companyId, updates);
+      res.json(note);
+    } catch (error) {
+      console.error("Error updating lead note:", error);
+      res.status(500).json({ message: "Failed to update lead note" });
+    }
+  });
+
+  app.delete("/api/leads/:leadId/notes/:noteId", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      await storage.deleteLeadNote(req.params.noteId, user.companyId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting lead note:", error);
+      res.status(500).json({ message: "Failed to delete lead note" });
+    }
+  });
+
   // Google Places API search for company addresses
   app.get("/api/places/search", isAuthenticated, async (req: any, res) => {
     try {

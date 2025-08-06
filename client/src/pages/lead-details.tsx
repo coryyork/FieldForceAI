@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LeadForm from "@/components/crm/lead-form";
+import NotesTimeline from "@/components/crm/notes-timeline";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Edit, Trash2, Mail, Phone, Building, User, DollarSign, TrendingUp, Calendar, MapPin } from "lucide-react";
@@ -316,6 +317,9 @@ export default function LeadDetails() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Notes Timeline */}
+                <NotesTimeline leadId={lead.id} />
 
                 <Card>
                   <CardHeader>

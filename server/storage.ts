@@ -5,6 +5,7 @@ import {
   documents,
   tasks,
   activities,
+  leadNotes,
   type User,
   type UpsertUser,
   type Company,
@@ -17,6 +18,8 @@ import {
   type InsertTask,
   type Activity,
   type InsertActivity,
+  type LeadNote,
+  type InsertLeadNote,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -57,6 +60,12 @@ export interface IStorage {
   
   // Activity operations
   getActivities(companyId: string, limit?: number): Promise<Activity[]>;
+
+  // Lead notes operations
+  getLeadNotes(leadId: string, companyId: string): Promise<any[]>;
+  createLeadNote(data: any): Promise<any>;
+  updateLeadNote(id: string, companyId: string, updates: any): Promise<any>;
+  deleteLeadNote(id: string, companyId: string): Promise<void>;
   createActivity(activity: InsertActivity): Promise<Activity>;
   
   // Search operations
@@ -245,12 +254,111 @@ export class DatabaseStorage implements IStorage {
 
   // Activity operations
   async getActivities(companyId: string, limit = 50): Promise<Activity[]> {
-    return await db
+    const regularActivities = await db
       .select()
       .from(activities)
       .where(eq(activities.companyId, companyId))
       .orderBy(desc(activities.createdAt))
       .limit(limit);
+    
+    // Also get recent notes as activities
+    const recentNotes = await db
+      .select({
+        id: leadNotes.id,
+        companyId: leadNotes.companyId,
+        userId: leadNotes.userId,
+        type: sql<string>`CONCAT('note_', ${leadNotes.type})`.as('type'),
+        description: sql<string>`CONCAT('Added ', ${leadNotes.type}, ' to lead')`.as('description'),
+        entityType: sql<string>`'lead'`.as('entityType'),
+        entityId: leadNotes.leadId,
+        metadata: sql<any>`NULL`.as('metadata'),
+        createdAt: leadNotes.createdAt,
+        updatedAt: leadNotes.updatedAt,
+      })
+      .from(leadNotes)
+      .where(eq(leadNotes.companyId, companyId))
+      .orderBy(desc(leadNotes.createdAt))
+      .limit(10);
+    
+    // Combine and sort all activities
+    const allActivities = [...regularActivities, ...recentNotes as any];
+    allActivities.sort((a, b) => {
+      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bDate - aDate;
+    });
+    
+    return allActivities.slice(0, limit);
+  }
+
+  // Lead notes operations
+  async getLeadNotes(leadId: string, companyId: string): Promise<any[]> {
+    return await db
+      .select({
+        id: leadNotes.id,
+        content: leadNotes.content,
+        type: leadNotes.type,
+        createdAt: leadNotes.createdAt,
+        updatedAt: leadNotes.updatedAt,
+        user: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        },
+      })
+      .from(leadNotes)
+      .leftJoin(users, eq(leadNotes.userId, users.id))
+      .where(and(eq(leadNotes.leadId, leadId), eq(leadNotes.companyId, companyId)))
+      .orderBy(desc(leadNotes.createdAt));
+  }
+
+  async createLeadNote(data: any): Promise<any> {
+    const [note] = await db
+      .insert(leadNotes)
+      .values(data)
+      .returning();
+    
+    // Get the note with user details
+    const [noteWithUser] = await db
+      .select({
+        id: leadNotes.id,
+        content: leadNotes.content,
+        type: leadNotes.type,
+        createdAt: leadNotes.createdAt,
+        updatedAt: leadNotes.updatedAt,
+        user: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        },
+      })
+      .from(leadNotes)
+      .leftJoin(users, eq(leadNotes.userId, users.id))
+      .where(eq(leadNotes.id, note.id));
+    
+    return noteWithUser;
+  }
+
+  async updateLeadNote(id: string, companyId: string, updates: any): Promise<any> {
+    const [note] = await db
+      .update(leadNotes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(leadNotes.id, id), eq(leadNotes.companyId, companyId)))
+      .returning();
+    
+    if (!note) {
+      throw new Error("Note not found or access denied");
+    }
+    
+    return note;
+  }
+
+  async deleteLeadNote(id: string, companyId: string): Promise<void> {
+    await db
+      .delete(leadNotes)
+      .where(and(eq(leadNotes.id, id), eq(leadNotes.companyId, companyId)));
   }
 
   async createActivity(activity: InsertActivity): Promise<Activity> {

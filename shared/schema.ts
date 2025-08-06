@@ -227,6 +227,44 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// Notes table for lead notes and comments
+export const leadNotes = pgTable("lead_notes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  leadId: uuid("lead_id").notNull().references(() => leads.id, { onDelete: "cascade" }),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  type: varchar("type").notNull().default("note"), // note, call, meeting, email
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const leadNotesRelations = relations(leadNotes, ({ one }) => ({
+  lead: one(leads, {
+    fields: [leadNotes.leadId],
+    references: [leads.id],
+  }),
+  company: one(companies, {
+    fields: [leadNotes.companyId],
+    references: [companies.id],
+  }),
+  user: one(users, {
+    fields: [leadNotes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertLeadNoteSchema = createInsertSchema(leadNotes).omit({
+  id: true,
+  companyId: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertLeadNote = z.infer<typeof insertLeadNoteSchema>;
+export type LeadNote = typeof leadNotes.$inferSelect;
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Lead = typeof leads.$inferSelect;
