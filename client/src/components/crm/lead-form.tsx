@@ -221,8 +221,8 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           <FormField
             control={form.control}
             name="name"
@@ -409,9 +409,9 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
         </div>
 
         {/* Address Section */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Address Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <FormField
               control={form.control}
               name="street"
@@ -503,15 +503,15 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
           )}
         />
 
-        <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onSuccess}>
+        <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t">
+          <Button type="button" variant="outline" onClick={onSuccess} className="touch-target">
             Cancel
           </Button>
           <Button 
             type="submit" 
             disabled={isSubmitting}
             onClick={handleButtonClick}
-            className="bg-electric-blue hover:bg-blue-600 text-white"
+            className="bg-electric-blue hover:bg-blue-600 text-white touch-target min-w-[120px]"
           >
             {isSubmitting ? "Saving..." : leadId ? "Update Lead" : "Create Lead"}
           </Button>

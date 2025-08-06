@@ -115,7 +115,7 @@ export default function CRM() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         
-        <main className="flex-1 overflow-y-auto app-container py-6 space-y-6 safe-area-bottom">
+        <main className="flex-1 overflow-y-auto app-container py-4 sm:py-6 space-y-4 sm:space-y-6 safe-area-bottom">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
             <div>
@@ -132,7 +132,7 @@ export default function CRM() {
                   Add New Lead
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Add New Lead</DialogTitle>
                 </DialogHeader>
