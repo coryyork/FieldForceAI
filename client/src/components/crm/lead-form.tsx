@@ -58,8 +58,10 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
         probability: parseInt(data.probability) || 0,
       };
       
-      const response = await apiRequest(method, url, leadData);
-      return response.json();
+      return await apiRequest(url, {
+        method,
+        body: leadData,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
@@ -90,9 +92,13 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
   });
 
   const onSubmit = async (data: LeadFormData) => {
+    console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
     setIsSubmitting(true);
     try {
       await mutation.mutateAsync(data);
+    } catch (error) {
+      console.error("Form submission error:", error);
     } finally {
       setIsSubmitting(false);
     }
