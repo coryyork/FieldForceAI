@@ -54,8 +54,10 @@ export default function AIAssistant() {
 
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
-      const response = await apiRequest("POST", "/api/ai/search", { query });
-      return response.json();
+      return await apiRequest("/api/ai/search", {
+        method: "POST",
+        body: { query },
+      });
     },
     onSuccess: (data) => {
       setSearchResults(data);
@@ -86,8 +88,10 @@ export default function AIAssistant() {
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest("POST", "/api/ai/chat", { message });
-      return response.json();
+      return await apiRequest("/api/ai/chat", {
+        method: "POST",
+        body: { message },
+      });
     },
     onSuccess: (data, message) => {
       setChatHistory(prev => [...prev, 
@@ -143,14 +147,14 @@ export default function AIAssistant() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         
-        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Header */}
           <div className="text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <Brain className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Assistant</h1>
-            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Assistant</h1>
+            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-sm sm:text-base px-4">
               Search across your CRM data, knowledge base, and business metrics with natural language. 
               Ask questions and get intelligent insights about your business.
             </p>
@@ -168,9 +172,9 @@ export default function AIAssistant() {
           {/* Quick Query Suggestions */}
           {!searchResults && chatHistory.length === 0 && (
             <div className="max-w-4xl mx-auto">
-              <Card>
+              <Card className="app-card">
                 <CardHeader>
-                  <CardTitle className="flex items-center">
+                  <CardTitle className="flex items-center text-lg">
                     <Lightbulb className="w-5 h-5 mr-2" />
                     Try These Queries
                   </CardTitle>
@@ -181,7 +185,7 @@ export default function AIAssistant() {
                       <Button 
                         key={index}
                         variant="outline" 
-                        className="justify-start text-left h-auto p-4"
+                        className="justify-start text-left h-auto p-3 sm:p-4 text-sm sm:text-base app-button touch-target"
                         onClick={() => handleSearch(query)}
                       >
                         <Search className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -197,7 +201,7 @@ export default function AIAssistant() {
           {/* Chat History */}
           {chatHistory.length > 0 && (
             <div className="max-w-4xl mx-auto">
-              <Card>
+              <Card className="app-card">
                 <CardHeader>
                   <CardTitle>Conversation</CardTitle>
                 </CardHeader>
@@ -205,7 +209,7 @@ export default function AIAssistant() {
                   <div className="space-y-4 max-h-96 overflow-y-auto">
                     {chatHistory.map((message, index) => (
                       <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-sm p-3 rounded-lg ${
+                        <div className={`max-w-sm p-3 rounded-lg text-sm ${
                           message.type === 'user' 
                             ? 'bg-blue-500 text-white' 
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'

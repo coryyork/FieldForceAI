@@ -62,7 +62,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col safe-area-top">
+    <div className="hidden md:flex w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-col safe-area-top">
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-3">
