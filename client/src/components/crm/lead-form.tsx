@@ -101,16 +101,27 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
   });
 
   const onSubmit = async (data: LeadFormData) => {
-    console.log("Form submitted with data:", data);
+    console.log("=== FORM SUBMISSION STARTED ===");
+    console.log("Form data:", data);
     console.log("Form errors:", form.formState.errors);
+    console.log("Form is valid:", form.formState.isValid);
     setIsSubmitting(true);
     try {
       await mutation.mutateAsync(data);
+      console.log("=== FORM SUBMISSION SUCCESS ===");
     } catch (error) {
-      console.error("Form submission error:", error);
+      console.error("=== FORM SUBMISSION ERROR ===", error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Add button click handler for debugging
+  const handleButtonClick = (e: React.MouseEvent) => {
+    console.log("=== BUTTON CLICKED ===");
+    console.log("Form state:", form.formState);
+    console.log("Form values:", form.getValues());
+    console.log("Form errors:", form.formState.errors);
   };
 
   const stages = [
@@ -311,6 +322,7 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
           <Button 
             type="submit" 
             disabled={isSubmitting}
+            onClick={handleButtonClick}
             className="bg-electric-blue hover:bg-blue-600 text-white"
           >
             {isSubmitting ? "Saving..." : leadId ? "Update Lead" : "Create Lead"}
