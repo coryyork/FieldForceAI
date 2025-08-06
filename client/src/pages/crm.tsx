@@ -207,10 +207,15 @@ export default function CRM() {
                   {leads.map((lead: any) => (
                     <div 
                       key={lead.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      onClick={() => setLocation(`/sales/lead/${lead.id}`)}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
-                      <div className="flex items-center space-x-4">
+                      <div 
+                        className="flex items-center space-x-4 cursor-pointer flex-1"
+                        onClick={() => {
+                          console.log("Lead name area clicked:", lead.id);
+                          setLocation(`/sales/lead/${lead.id}`);
+                        }}
+                      >
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
                           {lead.name?.charAt(0) || "?"}
                         </div>
