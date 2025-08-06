@@ -234,16 +234,25 @@ export default function CRM() {
                         
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setLocation(`/sales/lead/${lead.id}`)}>
+                              View Details
+                            </DropdownMenuItem>
                             <DropdownMenuItem>Edit Lead</DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-red-600"
-                              onClick={() => deleteLeadMutation.mutate(lead.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteLeadMutation.mutate(lead.id);
+                              }}
                             >
                               Delete Lead
                             </DropdownMenuItem>
