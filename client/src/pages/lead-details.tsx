@@ -232,6 +232,10 @@ export default function LeadDetails() {
                         <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Source</label>
                         <p className="text-gray-900 dark:text-white">{lead.source || "N/A"}</p>
                       </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned To</label>
+                        <p className="text-gray-900 dark:text-white">{lead.assignedUserId || "Unassigned"}</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
