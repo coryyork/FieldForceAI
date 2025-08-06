@@ -94,24 +94,26 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <Sidebar />
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
       
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         
-        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <main className="flex-1 overflow-y-auto app-container py-6 space-y-6 safe-area-bottom">
           {/* AI Assistant Banner */}
           <AIAssistantBanner />
 
           {/* Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {metrics.map((metric, index) => (
               <MetricCard key={index} {...metric} />
             ))}
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="app-grid">
             <div className="lg:col-span-2 xl:col-span-2">
               <RecentLeads />
             </div>

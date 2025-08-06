@@ -135,29 +135,32 @@ export default function LeadDetails() {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar />
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto app-container py-6 safe-area-bottom">
           <div className="max-w-4xl mx-auto space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col space-y-4 sm:space-y-0">
               <div className="flex items-center space-x-4">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => setLocation("/sales")}
+                  className="app-button app-button-secondary touch-target"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Sales
                 </Button>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{lead.name}</h1>
+                <div className="flex-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{lead.name}</h1>
                   <p className="text-gray-600 dark:text-gray-400">{lead.company}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Button onClick={() => setIsEditOpen(true)} variant="outline">
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => setIsEditOpen(true)} variant="outline" className="app-button app-button-secondary">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
@@ -165,6 +168,7 @@ export default function LeadDetails() {
                   onClick={() => deleteLeadMutation.mutate()} 
                   variant="destructive"
                   disabled={deleteLeadMutation.isPending}
+                  className="app-button"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete
@@ -175,14 +179,14 @@ export default function LeadDetails() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Lead Information */}
               <div className="lg:col-span-2 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
+                <div className="app-card">
+                  <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                       <User className="w-5 h-5 mr-2" />
                       Contact Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                    </h3>
+                  </div>
+                  <div className="p-6 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</label>
@@ -238,19 +242,19 @@ export default function LeadDetails() {
                         <p className="text-gray-900 dark:text-white">{lead.assignedUserId || "Unassigned"}</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
                 {/* Address Information */}
                 {(lead.street || lead.city || lead.state || lead.zipCode || lead.country) && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
+                  <div className="app-card">
+                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                         <MapPin className="w-5 h-5 mr-2" />
                         Address Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                      </h3>
+                    </div>
+                    <div className="p-6">
                       <div className="space-y-2">
                         {lead.street && (
                           <p className="text-gray-900 dark:text-white">{lead.street}</p>
@@ -262,19 +266,19 @@ export default function LeadDetails() {
                           <p className="text-gray-900 dark:text-white">{lead.country}</p>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 )}
 
                 {lead.notes && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Notes</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                  <div className="app-card">
+                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notes</h3>
+                    </div>
+                    <div className="p-6">
                       <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{lead.notes}</p>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 )}
               </div>
 

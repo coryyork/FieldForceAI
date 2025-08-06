@@ -3,12 +3,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import AISearchBar from "@/components/ai/ai-search-bar";
 import { Button } from "@/components/ui/button";
-import { Bell, HelpCircle } from "lucide-react";
+import { Bell, HelpCircle, Menu, Search } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import Sidebar from "./sidebar";
 import type { Company } from "@shared/schema";
 
 export default function Header() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   
   const { data: company } = useQuery<Company | null>({
     queryKey: ["/api/companies", user?.companyId],
@@ -27,18 +30,34 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+    <header className="app-header px-4 sm:px-6 py-4 safe-area-top">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My {company?.name || "Organization"}</h1>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Welcome back, <span className="font-medium">{user?.firstName || "User"}</span>
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Mobile menu trigger */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="md:hidden p-3 rounded-xl touch-target">
+                <Menu className="w-6 h-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-72">
+              <Sidebar />
+            </SheetContent>
+          </Sheet>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+              My {company?.name || "Organization"}
+            </h1>
+            <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
+              Welcome back, <span className="font-medium">{user?.firstName || "User"}</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          {/* AI Search Bar */}
-          <div className="hidden md:block">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Desktop AI Search Bar */}
+          <div className="hidden lg:block">
             <AISearchBar 
               onSearch={handleSearch} 
               onChat={handleChat}
@@ -47,17 +66,39 @@ export default function Header() {
             />
           </div>
 
+          {/* Mobile search button */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="lg:hidden p-2"
+            onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+          >
+            <Search className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          </Button>
+
           {/* Action Buttons */}
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" className="p-2">
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="sm" className="p-3 rounded-xl touch-target">
               <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </Button>
-            <Button variant="ghost" size="sm" className="p-2">
+            <Button variant="ghost" size="sm" className="p-3 rounded-xl touch-target hidden sm:flex">
               <HelpCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Search Bar */}
+      {isMobileSearchOpen && (
+        <div className="mt-4 lg:hidden">
+          <AISearchBar 
+            onSearch={handleSearch} 
+            onChat={handleChat}
+            placeholder="Ask AI about your business data..."
+            compact
+          />
+        </div>
+      )}
     </header>
   );
 }

@@ -60,18 +60,20 @@ export default function TasksPage() {
 
   return (
     <div className="flex h-screen">
-      <Sidebar />
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
       <div className="flex-1 flex flex-col">
         <Header />
-        <main className="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
+        <main className="flex-1 app-container py-6 bg-gray-50 dark:bg-gray-900 safe-area-bottom">
           <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 Tasks & Notes
               </h1>
               <Dialog open={isCreateTaskOpen} onOpenChange={setIsCreateTaskOpen}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button className="app-button app-button-primary touch-target">
                     <Plus className="w-4 h-4 mr-2" />
                     Create Task
                   </Button>
@@ -86,8 +88,8 @@ export default function TasksPage() {
             </div>
 
             {tasks.length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
+              <div className="app-card">
+                <div className="p-12 text-center">
                   <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                     No tasks yet
@@ -95,22 +97,22 @@ export default function TasksPage() {
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
                     Create your first task to get started with task management.
                   </p>
-                  <Button onClick={() => setIsCreateTaskOpen(true)}>
+                  <Button onClick={() => setIsCreateTaskOpen(true)} className="app-button app-button-primary">
                     <Plus className="w-4 h-4 mr-2" />
                     Create Task
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ) : (
-              <div className="grid gap-6">
+              <div className="grid gap-4">
                 {tasks.map((task) => (
-                  <Card key={task.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader>
+                  <div key={task.id} className="app-card app-card-interactive">
+                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             {task.title}
-                          </CardTitle>
+                          </h3>
                           {task.description && (
                             <p className="text-gray-600 dark:text-gray-400 mt-2">
                               {task.description}
@@ -126,8 +128,8 @@ export default function TasksPage() {
                           </Badge>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-6">
                       <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center space-x-4">
                           {task.dueDate && (
@@ -147,8 +149,8 @@ export default function TasksPage() {
                           Created {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : 'Unknown'}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

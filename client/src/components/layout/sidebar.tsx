@@ -62,7 +62,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+    <div className="w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col safe-area-top">
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-3">
@@ -87,10 +87,8 @@ export default function Sidebar() {
             <Link key={item.name} href={item.href}>
               <div
                 className={cn(
-                  "flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors cursor-pointer",
-                  isActive
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+                  "app-nav-item touch-target",
+                  isActive ? "app-nav-item-active" : "app-nav-item-inactive"
                 )}
               >
                 <Icon className="w-5 h-5" />
@@ -128,7 +126,7 @@ export default function Sidebar() {
           onClick={handleLogout}
           variant="outline" 
           size="sm" 
-          className="w-full justify-start"
+          className="w-full justify-start app-button app-button-secondary touch-target"
         >
           <LogOut className="w-4 h-4 mr-2" />
           Sign Out

@@ -108,16 +108,18 @@ export default function CRM() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <Sidebar />
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
       
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         
-        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <main className="flex-1 overflow-y-auto app-container py-6 space-y-6 safe-area-bottom">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Sales</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Sales</h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">
                 Manage your sales pipeline and track lead progress
               </p>
@@ -125,7 +127,7 @@ export default function CRM() {
             
             <Dialog open={isNewLeadOpen} onOpenChange={setIsNewLeadOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-electric-blue hover:bg-blue-600 text-white">
+                <Button className="app-button app-button-primary touch-target">
                   <Plus className="w-4 h-4 mr-2" />
                   Add New Lead
                 </Button>
@@ -140,56 +142,56 @@ export default function CRM() {
           </div>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardContent className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            <div className="app-card app-card-interactive">
+              <div className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Leads</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalLeads}</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{totalLeads}</p>
                   </div>
-                  <div className="p-3 bg-blue-100 rounded-full">
+                  <div className="p-3 bg-blue-100 rounded-xl">
                     <Users className="w-6 h-6 text-blue-600" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card>
-              <CardContent className="p-6">
+            <div className="app-card app-card-interactive">
+              <div className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pipeline Value</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white">${totalValue.toLocaleString()}</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">${totalValue.toLocaleString()}</p>
                   </div>
-                  <div className="p-3 bg-green-100 rounded-full">
+                  <div className="p-3 bg-green-100 rounded-xl">
                     <DollarSign className="w-6 h-6 text-green-600" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card>
-              <CardContent className="p-6">
+            <div className="app-card app-card-interactive">
+              <div className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Conversion Rate</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white">{conversionRate}%</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{conversionRate}%</p>
                   </div>
-                  <div className="p-3 bg-purple-100 rounded-full">
+                  <div className="p-3 bg-purple-100 rounded-xl">
                     <TrendingUp className="w-6 h-6 text-purple-600" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* Leads Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>All Leads</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="app-card">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">All Leads</h3>
+            </div>
+            <div className="p-6">
               {leadsLoading ? (
                 <div className="space-y-4">
                   {[...Array(5)].map((_, i) => (
@@ -210,13 +212,13 @@ export default function CRM() {
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       <div 
-                        className="flex items-center space-x-4 cursor-pointer flex-1"
+                        className="flex items-center space-x-4 cursor-pointer flex-1 app-card-interactive p-2 -m-2 rounded-xl"
                         onClick={() => {
                           console.log("Lead name area clicked:", lead.id);
                           setLocation(`/sales/lead/${lead.id}`);
                         }}
                       >
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-semibold touch-target">
                           {lead.name?.charAt(0) || "?"}
                         </div>
                         <div>
@@ -274,14 +276,14 @@ export default function CRM() {
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Get started by adding your first lead to the CRM system.
                   </p>
-                  <Button onClick={() => setIsNewLeadOpen(true)} className="bg-electric-blue hover:bg-blue-600 text-white">
+                  <Button onClick={() => setIsNewLeadOpen(true)} className="app-button app-button-primary">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Your First Lead
                   </Button>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </main>
       </div>
     </div>

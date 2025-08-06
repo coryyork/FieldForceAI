@@ -46,10 +46,10 @@ export default function MetricCard({
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
+    <div className="app-card app-card-interactive">
+      <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className={cn("p-2 rounded-lg", getColorClasses(color))}>
+          <div className={cn("p-3 rounded-xl", getColorClasses(color))}>
             <Icon className="w-5 h-5" />
           </div>
           <div className={cn("text-xs font-medium", getChangeColor(changeType))}>
@@ -62,7 +62,7 @@ export default function MetricCard({
         <div className="text-sm text-gray-600 dark:text-gray-400">
           {title}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

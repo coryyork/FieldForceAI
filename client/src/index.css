@@ -2,6 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
+/* App-like styles */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+    overscroll-behavior: none;
+  }
+
+  /* Prevent scroll bouncing on mobile and ensure app fills screen */
+  html, body {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+  
+  /* Smooth scrolling for mobile */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@layer components {
+  /* App-like button styles */
+  .app-button {
+    @apply rounded-xl px-6 py-3 font-medium transition-all duration-200 active:scale-95;
+  }
+  
+  .app-button-primary {
+    @apply bg-electric-blue hover:bg-blue-600 text-white shadow-lg hover:shadow-xl;
+  }
+  
+  .app-button-secondary {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm hover:shadow-md;
+  }
+
+  /* App-like card styles */
+  .app-card {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden;
+  }
+  
+  .app-card-interactive {
+    @apply app-card hover:shadow-md transition-all duration-200 active:scale-[0.98] cursor-pointer;
+  }
+
+  /* App navigation */
+  .app-nav-item {
+    @apply flex items-center space-x-3 px-4 py-4 rounded-xl font-medium transition-all duration-200 active:scale-95;
+  }
+  
+  .app-nav-item-active {
+    @apply bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400;
+  }
+  
+  .app-nav-item-inactive {
+    @apply text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50;
+  }
+
+  /* App header */
+  .app-header {
+    @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 supports-[backdrop-filter]:bg-white/60 supports-[backdrop-filter]:dark:bg-gray-800/60;
+  }
+
+  /* Mobile-friendly spacing */
+  .app-container {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  .app-grid {
+    @apply grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6;
+  }
+
+  /* Touch-friendly sizing */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Status bar safe area for mobile */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 :root {
   --background: hsl(0, 0%, 98%);
   --foreground: hsl(240, 10%, 10%);
