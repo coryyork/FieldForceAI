@@ -72,8 +72,8 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
       const leadData = {
         ...data,
         companyId: user?.companyId,
-        value: data.value,
-        probability: data.probability,
+        value: data.value, // Keep as string for decimal field
+        probability: parseInt(data.probability) || 0, // Convert to number for integer field
       };
       
       console.log("=== SENDING TO BACKEND ===");
