@@ -16,7 +16,14 @@ import { apiRequest } from "@/lib/queryClient";
 import { insertTaskSchema, type InsertTask } from "@shared/schema";
 import { z } from "zod";
 
-const taskFormSchema = insertTaskSchema.extend({
+const taskFormSchema = insertTaskSchema.omit({
+  companyId: true,
+  createdBy: true,
+  assignedTo: true,
+  leadId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   dueDate: z.date().optional(),
 });
 
@@ -42,6 +49,7 @@ export default function TaskForm({ onSuccess }: TaskFormProps) {
 
   const createTaskMutation = useMutation({
     mutationFn: async (data: TaskFormData) => {
+      console.log("Making API request with data:", data);
       return await apiRequest("/api/tasks", {
         method: "POST",
         body: data,
@@ -57,16 +65,26 @@ export default function TaskForm({ onSuccess }: TaskFormProps) {
       onSuccess();
     },
     onError: (error: Error) => {
+      console.error("Task creation error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create task",
         variant: "destructive",
       });
     },
   });
 
   const onSubmit = (data: TaskFormData) => {
-    createTaskMutation.mutate(data);
+    console.log("Form submitted with data:", data);
+    
+    // Convert dueDate to ISO string if it exists
+    const submitData = {
+      ...data,
+      dueDate: data.dueDate ? data.dueDate.toISOString() : undefined
+    };
+    
+    console.log("Submitting task data:", submitData);
+    createTaskMutation.mutate(submitData);
   };
 
   return (
