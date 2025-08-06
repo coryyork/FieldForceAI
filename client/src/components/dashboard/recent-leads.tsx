@@ -2,15 +2,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Users } from "lucide-react";
 
 export default function RecentLeads() {
+  const [, setLocation] = useLocation();
   const { data: leads, isLoading } = useQuery({
     queryKey: ["/api/leads"],
   });
 
-  const recentLeads = leads?.slice(0, 5) || [];
+  const recentLeads = Array.isArray(leads) ? leads.slice(0, 5) : [];
 
   const getStageColor = (stage: string) => {
     switch (stage) {
@@ -63,7 +64,11 @@ export default function RecentLeads() {
         ) : recentLeads.length > 0 ? (
           <div className="space-y-4">
             {recentLeads.map((lead: any) => (
-              <div key={lead.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <div 
+                key={lead.id} 
+                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                onClick={() => setLocation(`/sales/lead/${lead.id}`)}
+              >
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                     {lead.name?.charAt(0) || "?"}
