@@ -16,7 +16,16 @@ import { z } from "zod";
 const leadFormSchema = insertLeadSchema.extend({
   value: z.string().transform((val) => val === '' ? '0' : val),
   probability: z.string().transform((val) => val === '' ? '0' : val),
-});
+}).transform(data => ({
+  ...data,
+  name: data.name || "",
+  email: data.email || "",
+  phone: data.phone || "",
+  company: data.company || "",
+  title: data.title || "",
+  source: data.source || "",
+  notes: data.notes || "",
+}));
 
 type LeadFormData = z.infer<typeof leadFormSchema>;
 
@@ -148,7 +157,7 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
               <FormItem>
                 <FormLabel>Company</FormLabel>
                 <FormControl>
-                  <Input placeholder="Acme Corp" {...field} />
+                  <Input placeholder="Acme Corp" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -162,7 +171,7 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="john@acme.com" {...field} />
+                  <Input type="email" placeholder="john@acme.com" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -176,7 +185,7 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="+1 (555) 123-4567" {...field} />
+                  <Input placeholder="+1 (555) 123-4567" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -190,7 +199,7 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
               <FormItem>
                 <FormLabel>Job Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="CEO" {...field} />
+                  <Input placeholder="CEO" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -203,7 +212,7 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Lead Source</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select source" />
@@ -228,7 +237,7 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Stage</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || "new"}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select stage" />
@@ -287,6 +296,7 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
                   placeholder="Additional information about this lead..."
                   className="resize-none"
                   {...field}
+                  value={field.value || ""}
                 />
               </FormControl>
               <FormMessage />
