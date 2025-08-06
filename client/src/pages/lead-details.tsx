@@ -37,9 +37,20 @@ export default function LeadDetails() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: lead, isLoading: leadLoading } = useQuery<any>({
+  const { data: lead, isLoading: leadLoading, error } = useQuery<any>({
     queryKey: ["/api/leads", params?.id],
+    queryFn: () => apiRequest(`/api/leads/${params?.id}`),
     enabled: isAuthenticated && !!params?.id,
+  });
+
+  // Debug logging
+  console.log("Lead Details Debug:", {
+    params,
+    leadId: params?.id,
+    lead,
+    isLoading: leadLoading,
+    error,
+    isAuthenticated
   });
 
   const deleteLeadMutation = useMutation({
