@@ -264,6 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId: user.companyId,
         createdBy: req.user.claims.sub,
         assignedTo: req.body.assignedTo || req.user.claims.sub,
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined,
       });
       
       const task = await storage.createTask(taskData);

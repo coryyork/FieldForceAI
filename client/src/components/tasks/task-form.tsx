@@ -77,10 +77,13 @@ export default function TaskForm({ onSuccess }: TaskFormProps) {
   const onSubmit = (data: TaskFormData) => {
     console.log("Form submitted with data:", data);
     
-    // Convert dueDate to ISO string if it exists
+    // Convert dueDate to ISO string if it exists, otherwise remove undefined values
     const submitData = {
-      ...data,
-      dueDate: data.dueDate ? data.dueDate.toISOString() : undefined
+      title: data.title,
+      description: data.description || undefined,
+      status: data.status,
+      priority: data.priority,
+      dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
     };
     
     console.log("Submitting task data:", submitData);
