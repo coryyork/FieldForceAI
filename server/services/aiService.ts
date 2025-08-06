@@ -1,0 +1,139 @@
+import OpenAI from "openai";
+import { storage } from "../storage";
+
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key" 
+});
+
+export class AIService {
+  async searchBusinessData(companyId: string, query: string) {
+    try {
+      // First, get raw search results from the database
+      const searchResults = await storage.searchAll(companyId, query);
+      
+      // Use AI to analyze and rank the results
+      const prompt = `
+        You are an AI assistant for a business platform called Field Force. 
+        Analyze the following search results for the query: "${query}"
+        
+        Leads found: ${JSON.stringify(searchResults.leads)}
+        Documents found: ${JSON.stringify(searchResults.documents)}
+        Tasks found: ${JSON.stringify(searchResults.tasks)}
+        
+        Provide a structured response with:
+        1. A summary of what was found
+        2. The most relevant results ranked by importance
+        3. Suggested actions the user can take
+        
+        Respond in JSON format with this structure:
+        {
+          "summary": "Brief summary of findings",
+          "relevantResults": {
+            "leads": [...],
+            "documents": [...],
+            "tasks": [...]
+          },
+          "suggestedActions": ["action1", "action2", ...],
+          "totalResults": number
+        }
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const analysis = JSON.parse(response.choices[0].message.content || "{}");
+      
+      return {
+        query,
+        analysis,
+        rawResults: searchResults,
+      };
+    } catch (error) {
+      console.error("Error in AI search:", error);
+      throw new Error("Failed to perform AI-powered search");
+    }
+  }
+
+  async chatWithAI(companyId: string, message: string) {
+    try {
+      // Get recent company data for context
+      const [leads, documents, tasks, activities] = await Promise.all([
+        storage.getLeads(companyId).then(results => results.slice(0, 10)),
+        storage.getDocuments(companyId).then(results => results.slice(0, 10)),
+        storage.getTasks(companyId).then(results => results.slice(0, 10)),
+        storage.getActivities(companyId, 10),
+      ]);
+
+      const contextPrompt = `
+        You are an AI assistant for Field Force, a business platform. 
+        You have access to the following company data for context:
+        
+        Recent Leads: ${JSON.stringify(leads.map(l => ({ name: l.name, company: l.company, stage: l.stage, value: l.value })))}
+        Recent Documents: ${JSON.stringify(documents.map(d => ({ title: d.title, fileType: d.fileType })))}
+        Recent Tasks: ${JSON.stringify(tasks.map(t => ({ title: t.title, status: t.status, priority: t.priority })))}
+        Recent Activities: ${JSON.stringify(activities.map(a => ({ type: a.type, description: a.description })))}
+        
+        User message: "${message}"
+        
+        Provide a helpful response based on the available data. Be conversational and actionable.
+        If the user is asking for specific data analysis, provide insights based on the context.
+        If they want to perform actions (like creating leads, tasks, etc.), guide them on how to do it.
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful AI assistant for a business platform. Be concise, professional, and actionable in your responses."
+          },
+          {
+            role: "user",
+            content: contextPrompt
+          }
+        ],
+      });
+
+      return response.choices[0].message.content;
+    } catch (error) {
+      console.error("Error in AI chat:", error);
+      throw new Error("Failed to process AI chat request");
+    }
+  }
+
+  async analyzeLeadData(companyId: string) {
+    try {
+      const leads = await storage.getLeads(companyId);
+      
+      const prompt = `
+        Analyze the following CRM lead data and provide business insights:
+        
+        Leads: ${JSON.stringify(leads)}
+        
+        Provide analysis including:
+        1. Conversion funnel performance
+        2. High-value opportunities
+        3. Pipeline health
+        4. Recommendations for improvement
+        
+        Respond in JSON format with detailed metrics and actionable insights.
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      return JSON.parse(response.choices[0].message.content || "{}");
+    } catch (error) {
+      console.error("Error analyzing lead data:", error);
+      throw new Error("Failed to analyze lead data");
+    }
+  }
+}
+
+export const aiService = new AIService();

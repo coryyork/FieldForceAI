@@ -1,0 +1,232 @@
+import { sql } from 'drizzle-orm';
+import {
+  index,
+  jsonb,
+  pgTable,
+  timestamp,
+  varchar,
+  text,
+  integer,
+  decimal,
+  boolean,
+  uuid,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// Session storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  companyId: uuid("company_id").references(() => companies.id),
+  role: varchar("role").default("user"), // user, admin, owner
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Companies table for multi-tenant architecture
+export const companies = pgTable("companies", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  domain: varchar("domain").unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Leads table for CRM functionality
+export const leads = pgTable("leads", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  assignedUserId: varchar("assigned_user_id").references(() => users.id),
+  name: varchar("name").notNull(),
+  email: varchar("email"),
+  phone: varchar("phone"),
+  company: varchar("company"),
+  title: varchar("title"),
+  source: varchar("source"), // website, referral, cold_call, etc.
+  stage: varchar("stage").notNull().default("new"), // new, qualified, proposal, negotiation, closed_won, closed_lost
+  value: decimal("value", { precision: 12, scale: 2 }),
+  probability: integer("probability").default(0), // 0-100
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Knowledge base documents
+export const documents = pgTable("documents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+  title: varchar("title").notNull(),
+  content: text("content"),
+  fileType: varchar("file_type"),
+  fileSize: integer("file_size"),
+  tags: text("tags").array(),
+  isPublic: boolean("is_public").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Tasks and todos
+export const tasks = pgTable("tasks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  status: varchar("status").notNull().default("pending"), // pending, in_progress, completed, cancelled
+  priority: varchar("priority").default("medium"), // low, medium, high, urgent
+  dueDate: timestamp("due_date"),
+  leadId: uuid("lead_id").references(() => leads.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Activity log for tracking all user actions
+export const activities = pgTable("activities", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: varchar("type").notNull(), // lead_created, task_completed, document_uploaded, etc.
+  description: text("description").notNull(),
+  entityType: varchar("entity_type"), // lead, task, document, etc.
+  entityId: uuid("entity_id"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Relations
+export const usersRelations = relations(users, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [users.companyId],
+    references: [companies.id],
+  }),
+  assignedLeads: many(leads),
+  assignedTasks: many(tasks),
+  createdTasks: many(tasks),
+  uploadedDocuments: many(documents),
+  activities: many(activities),
+}));
+
+export const companiesRelations = relations(companies, ({ many }) => ({
+  users: many(users),
+  leads: many(leads),
+  documents: many(documents),
+  tasks: many(tasks),
+  activities: many(activities),
+}));
+
+export const leadsRelations = relations(leads, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [leads.companyId],
+    references: [companies.id],
+  }),
+  assignedUser: one(users, {
+    fields: [leads.assignedUserId],
+    references: [users.id],
+  }),
+  tasks: many(tasks),
+}));
+
+export const documentsRelations = relations(documents, ({ one }) => ({
+  company: one(companies, {
+    fields: [documents.companyId],
+    references: [companies.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [documents.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  company: one(companies, {
+    fields: [tasks.companyId],
+    references: [companies.id],
+  }),
+  assignedToUser: one(users, {
+    fields: [tasks.assignedTo],
+    references: [users.id],
+  }),
+  createdByUser: one(users, {
+    fields: [tasks.createdBy],
+    references: [users.id],
+  }),
+  lead: one(leads, {
+    fields: [tasks.leadId],
+    references: [leads.id],
+  }),
+}));
+
+export const activitiesRelations = relations(activities, ({ one }) => ({
+  company: one(companies, {
+    fields: [activities.companyId],
+    references: [companies.id],
+  }),
+  user: one(users, {
+    fields: [activities.userId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas
+export const insertCompanySchema = createInsertSchema(companies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLeadSchema = createInsertSchema(leads).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDocumentSchema = createInsertSchema(documents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTaskSchema = createInsertSchema(tasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertActivitySchema = createInsertSchema(activities).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type UpsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = z.infer<typeof insertCompanySchema>;
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = z.infer<typeof insertLeadSchema>;
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type Activity = typeof activities.$inferSelect;
+export type InsertActivity = z.infer<typeof insertActivitySchema>;

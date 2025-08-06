@@ -1,0 +1,56 @@
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/use-theme";
+import Landing from "@/pages/landing";
+import Onboarding from "@/pages/onboarding";
+import Dashboard from "@/pages/dashboard";
+import CRM from "@/pages/crm";
+import AIAssistant from "@/pages/ai-assistant";
+import KnowledgeBase from "@/pages/knowledge-base";
+import TasksPage from "@/pages/tasks";
+import NotFound from "@/pages/not-found";
+
+function Router() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  
+  // Show onboarding if user is authenticated but doesn't have a company
+  const needsOnboarding = isAuthenticated && user && !user.companyId;
+
+  return (
+    <Switch>
+      {isLoading || !isAuthenticated ? (
+        <Route path="/" component={Landing} />
+      ) : needsOnboarding ? (
+        <Route path="/" component={Onboarding} />
+      ) : (
+        <>
+          <Route path="/" component={Dashboard} />
+          <Route path="/sales" component={CRM} />
+          <Route path="/ai-assistant" component={AIAssistant} />
+          <Route path="/knowledge-base" component={KnowledgeBase} />
+          <Route path="/tasks" component={TasksPage} />
+        </>
+      )}
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="light">
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
