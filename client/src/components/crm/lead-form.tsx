@@ -72,9 +72,14 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
       const leadData = {
         ...data,
         companyId: user?.companyId,
-        value: parseFloat(data.value) || 0,
-        probability: parseInt(data.probability) || 0,
+        value: data.value,
+        probability: data.probability,
       };
+      
+      console.log("=== SENDING TO BACKEND ===");
+      console.log("Lead data:", leadData);
+      console.log("Value type:", typeof leadData.value);
+      console.log("Probability type:", typeof leadData.probability);
       
       return await apiRequest(url, {
         method,
