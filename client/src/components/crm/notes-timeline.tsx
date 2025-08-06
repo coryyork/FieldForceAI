@@ -59,7 +59,7 @@ export default function NotesTimeline({ leadId }: NotesTimelineProps) {
     mutationFn: async (noteData: { content: string; type: string }) => {
       return await apiRequest(`/api/leads/${leadId}/notes`, {
         method: "POST",
-        body: JSON.stringify(noteData),
+        body: noteData,
       });
     },
     onSuccess: () => {
@@ -96,7 +96,7 @@ export default function NotesTimeline({ leadId }: NotesTimelineProps) {
     mutationFn: async ({ noteId, updates }: { noteId: string; updates: { content: string; type: string } }) => {
       return await apiRequest(`/api/leads/${leadId}/notes/${noteId}`, {
         method: "PUT",
-        body: JSON.stringify(updates),
+        body: updates,
       });
     },
     onSuccess: () => {
