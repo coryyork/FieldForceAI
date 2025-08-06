@@ -9,6 +9,7 @@ import Landing from "@/pages/landing";
 import Onboarding from "@/pages/onboarding";
 import Dashboard from "@/pages/dashboard";
 import CRM from "@/pages/crm";
+import LeadDetails from "@/pages/lead-details";
 import AIAssistant from "@/pages/ai-assistant";
 import KnowledgeBase from "@/pages/knowledge-base";
 import TasksPage from "@/pages/tasks";
@@ -30,6 +31,7 @@ function Router() {
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/sales" component={CRM} />
+          <Route path="/sales/lead/:id" component={LeadDetails} />
           <Route path="/ai-assistant" component={AIAssistant} />
           <Route path="/knowledge-base" component={KnowledgeBase} />
           <Route path="/tasks" component={TasksPage} />

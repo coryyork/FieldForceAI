@@ -13,11 +13,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, Users, DollarSign, TrendingUp, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useLocation } from "wouter";
 
 export default function CRM() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [isNewLeadOpen, setIsNewLeadOpen] = useState(false);
 
   // Redirect to home if not authenticated
@@ -203,7 +205,11 @@ export default function CRM() {
               ) : leads && leads.length > 0 ? (
                 <div className="space-y-4">
                   {leads.map((lead: any) => (
-                    <div key={lead.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <div 
+                      key={lead.id} 
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      onClick={() => setLocation(`/sales/lead/${lead.id}`)}
+                    >
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
                           {lead.name?.charAt(0) || "?"}
