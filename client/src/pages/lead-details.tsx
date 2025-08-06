@@ -43,15 +43,7 @@ export default function LeadDetails() {
     enabled: isAuthenticated && !!params?.id,
   });
 
-  // Debug logging
-  console.log("Lead Details Debug:", {
-    params,
-    leadId: params?.id,
-    lead,
-    isLoading: leadLoading,
-    error,
-    isAuthenticated
-  });
+
 
   const deleteLeadMutation = useMutation({
     mutationFn: async () => {
