@@ -328,6 +328,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Google Places API search for company addresses
+  app.get("/api/places/search", isAuthenticated, async (req: any, res) => {
+    try {
+      const { query } = req.query;
+      if (!query) {
+        return res.status(400).json({ message: "Query parameter is required" });
+      }
+
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "Google Places API key not configured" });
+      }
+
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&type=establishment&key=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Google Places API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+        throw new Error(`Google Places API error: ${data.status}`);
+      }
+
+      const results = data.results?.slice(0, 5).map((place: any) => ({
+        placeId: place.place_id,
+        name: place.name,
+        formattedAddress: place.formatted_address,
+        types: place.types,
+        rating: place.rating,
+      })) || [];
+
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching places:", error);
+      res.status(500).json({ message: "Failed to search places" });
+    }
+  });
+
+  app.get("/api/places/details/:placeId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { placeId } = req.params;
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(500).json({ message: "Google Places API key not configured" });
+      }
+
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,address_components,geometry&key=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Google Places API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.status !== 'OK') {
+        throw new Error(`Google Places API error: ${data.status}`);
+      }
+
+      const place = data.result;
+      const addressComponents = place.address_components || [];
+      
+      // Parse address components
+      let street = '';
+      let city = '';
+      let state = '';
+      let zipCode = '';
+      let country = '';
+
+      addressComponents.forEach((component: any) => {
+        const types = component.types;
+        if (types.includes('street_number')) {
+          street = component.long_name + ' ';
+        } else if (types.includes('route')) {
+          street += component.long_name;
+        } else if (types.includes('locality')) {
+          city = component.long_name;
+        } else if (types.includes('administrative_area_level_1')) {
+          state = component.short_name;
+        } else if (types.includes('postal_code')) {
+          zipCode = component.long_name;
+        } else if (types.includes('country')) {
+          country = component.long_name;
+        }
+      });
+
+      const addressDetails = {
+        placeId,
+        name: place.name,
+        formattedAddress: place.formatted_address,
+        street: street.trim(),
+        city,
+        state,
+        zipCode,
+        country,
+      };
+
+      res.json(addressDetails);
+    } catch (error) {
+      console.error("Error getting place details:", error);
+      res.status(500).json({ message: "Failed to get place details" });
+    }
+  });
+
   // AI search routes
   app.post("/api/ai/search", isAuthenticated, async (req: any, res) => {
     try {

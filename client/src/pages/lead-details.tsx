@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import LeadForm from "@/components/crm/lead-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Edit, Trash2, Mail, Phone, Building, User, DollarSign, TrendingUp, Calendar } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Mail, Phone, Building, User, DollarSign, TrendingUp, Calendar, MapPin } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 
 export default function LeadDetails() {
@@ -239,6 +239,31 @@ export default function LeadDetails() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Address Information */}
+                {(lead.street || lead.city || lead.state || lead.zipCode || lead.country) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <MapPin className="w-5 h-5 mr-2" />
+                        Address Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {lead.street && (
+                          <p className="text-gray-900 dark:text-white">{lead.street}</p>
+                        )}
+                        <p className="text-gray-900 dark:text-white">
+                          {[lead.city, lead.state, lead.zipCode].filter(Boolean).join(", ")}
+                        </p>
+                        {lead.country && (
+                          <p className="text-gray-900 dark:text-white">{lead.country}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {lead.notes && (
                   <Card>

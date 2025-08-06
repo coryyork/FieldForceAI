@@ -26,6 +26,12 @@ const leadFormSchema = insertLeadSchema.omit({ companyId: true }).extend({
   title: data.title || "",
   source: data.source || "",
   notes: data.notes || "",
+  street: data.street || "",
+  city: data.city || "",
+  state: data.state || "",
+  zipCode: data.zipCode || "",
+  country: data.country || "",
+  placeId: data.placeId || "",
 }));
 
 type LeadFormData = z.infer<typeof leadFormSchema>;
@@ -40,6 +46,8 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [companySearchResults, setCompanySearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const { user } = useAuth();
 
   // Get company data
@@ -61,6 +69,12 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
       value: initialData?.value?.toString() || "0",
       probability: initialData?.probability?.toString() || "0",
       notes: initialData?.notes || "",
+      street: initialData?.street || "",
+      city: initialData?.city || "",
+      state: initialData?.state || "",
+      zipCode: initialData?.zipCode || "",
+      country: initialData?.country || "",
+      placeId: initialData?.placeId || "",
     },
   });
 
@@ -130,6 +144,54 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
     }
   };
 
+  // Company search functionality
+  const searchCompanies = async (query: string) => {
+    if (!query.trim() || query.length < 3) {
+      setCompanySearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await apiRequest(`/api/places/search?query=${encodeURIComponent(query)}`);
+      setCompanySearchResults(response || []);
+    } catch (error) {
+      console.error("Error searching companies:", error);
+      setCompanySearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const selectCompany = async (place: any) => {
+    try {
+      const details = await apiRequest(`/api/places/details/${place.placeId}`);
+      
+      // Update form with company details
+      form.setValue("company", details.name);
+      form.setValue("street", details.street || "");
+      form.setValue("city", details.city || "");
+      form.setValue("state", details.state || "");
+      form.setValue("zipCode", details.zipCode || "");
+      form.setValue("country", details.country || "");
+      form.setValue("placeId", details.placeId || "");
+      
+      setCompanySearchResults([]);
+      
+      toast({
+        title: "Company Selected",
+        description: "Address details have been automatically filled in.",
+      });
+    } catch (error) {
+      console.error("Error getting company details:", error);
+      toast({
+        title: "Error",
+        description: "Failed to get company details",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Add button click handler for debugging
   const handleButtonClick = (e: React.MouseEvent) => {
     console.log("=== BUTTON CLICKED ===");
@@ -179,11 +241,47 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
             control={form.control}
             name="company"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="relative">
                 <FormLabel>Company</FormLabel>
                 <FormControl>
-                  <Input placeholder="Acme Corp" {...field} value={field.value || ""} />
+                  <Input 
+                    placeholder="Start typing company name..." 
+                    {...field} 
+                    value={field.value || ""} 
+                    onChange={(e) => {
+                      field.onChange(e);
+                      searchCompanies(e.target.value);
+                    }}
+                  />
                 </FormControl>
+                
+                {/* Company search results dropdown */}
+                {Array.isArray(companySearchResults) && companySearchResults.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {companySearchResults.map((place) => (
+                      <div
+                        key={place.placeId}
+                        className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0"
+                        onClick={() => selectCompany(place)}
+                      >
+                        <div className="font-medium text-gray-900 dark:text-white">{place.name}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{place.formattedAddress}</div>
+                        {place.rating && (
+                          <div className="text-xs text-gray-500 dark:text-gray-500">
+                            ⭐ {place.rating} rating
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {isSearching && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border rounded-md shadow-lg p-3">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Searching companies...</div>
+                  </div>
+                )}
+                
                 <FormMessage />
               </FormItem>
             )}
@@ -308,6 +406,82 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
               </FormItem>
             )}
           />
+        </div>
+
+        {/* Address Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Address Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="street"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Street Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="123 Main Street" {...field} value={field.value || ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input placeholder="New York" {...field} value={field.value || ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="state"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>State/Province</FormLabel>
+                  <FormControl>
+                    <Input placeholder="NY" {...field} value={field.value || ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="zipCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ZIP/Postal Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="10001" {...field} value={field.value || ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl>
+                    <Input placeholder="United States" {...field} value={field.value || ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
         <FormField

@@ -65,6 +65,13 @@ export const leads = pgTable("leads", {
   value: decimal("value", { precision: 12, scale: 2 }),
   probability: integer("probability").default(0), // 0-100
   notes: text("notes"),
+  // Address fields
+  street: varchar("street"),
+  city: varchar("city"),
+  state: varchar("state"),
+  zipCode: varchar("zip_code"),
+  country: varchar("country"),
+  placeId: varchar("place_id"), // Google Places ID for reference
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
