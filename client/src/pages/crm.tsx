@@ -35,14 +35,14 @@ export default function CRM() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: leads = [], isLoading: leadsLoading } = useQuery({
+  const { data: leads = [], isLoading: leadsLoading } = useQuery<any[]>({
     queryKey: ["/api/leads"],
     enabled: isAuthenticated,
   });
 
   const deleteLeadMutation = useMutation({
     mutationFn: async (leadId: string) => {
-      await apiRequest("DELETE", `/api/leads/${leadId}`);
+      await apiRequest(`/api/leads/${leadId}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });

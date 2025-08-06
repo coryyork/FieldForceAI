@@ -1,12 +1,25 @@
-# Field Force - AI-Powered Business Platform
+# Field Force 2 - AI-Powered Business Platform
 
 ## Overview
 
-Field Force is a comprehensive business management platform that combines CRM functionality with AI-powered search capabilities. The application provides a centralized hub for managing leads, organizing knowledge bases, and extracting insights from business data through natural language queries. Built as a full-stack web application, it features a modern React frontend with a Node.js Express backend, designed for multi-tenant use with company-based data isolation.
+Field Force 2 is a comprehensive multi-tenant SaaS business management platform that combines CRM functionality with AI-powered search capabilities. The application provides a centralized hub for managing leads, organizing knowledge bases, and extracting insights from business data through natural language queries. Built as a full-stack web application, it features a modern React frontend with a Node.js Express backend, designed for multi-tenant use with company-based data isolation and dynamic organization branding.
+
+## Recent Changes (August 2025)
+
+- **Multi-tenant Architecture**: Implemented complete company workspace system with automatic onboarding flow
+- **Dynamic Branding**: Header now displays "My [Organization Name]" based on user's company
+- **Navigation Updates**: Renamed "CRM & Leads" to "Sales", created separate "Tasks & Notes" page
+- **Company Onboarding**: New users automatically guided through organization setup process
+- **Authentication Flow**: Seamless integration with Replit Auth and company workspace association
+- **Data Isolation**: All business data properly scoped to company workspaces
+- **TypeScript Fixes**: Resolved all LSP errors for proper type safety across the application
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+- **Communication style**: Simple, everyday language
+- **Navigation**: "Sales" instead of "CRM & Leads", separate "Tasks & Notes" page
+- **Branding**: Dynamic organization name display ("My [Organization Name]")
+- **Architecture**: Multi-tenant SaaS with company workspaces
 
 ## System Architecture
 

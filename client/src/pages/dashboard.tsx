@@ -31,12 +31,12 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: leads = [] } = useQuery({
+  const { data: leads = [] } = useQuery<any[]>({
     queryKey: ["/api/leads"],
     enabled: isAuthenticated,
   });
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [] } = useQuery<any[]>({
     queryKey: ["/api/tasks"],
     enabled: isAuthenticated,
   });
