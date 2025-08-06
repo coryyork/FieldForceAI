@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { insertLeadSchema } from "@shared/schema";
 import { z } from "zod";
 
-const leadFormSchema = insertLeadSchema.extend({
+const leadFormSchema = insertLeadSchema.omit({ companyId: true }).extend({
   value: z.string().transform((val) => val === '' ? '0' : val),
   probability: z.string().transform((val) => val === '' ? '0' : val),
 }).transform(data => ({
@@ -39,6 +40,13 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+
+  // Get company data
+  const { data: company } = useQuery({
+    queryKey: ["/api/companies", user?.companyId],
+    enabled: !!user?.companyId,
+  });
 
   const form = useForm<LeadFormData>({
     resolver: zodResolver(leadFormSchema),
@@ -63,6 +71,7 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
       
       const leadData = {
         ...data,
+        companyId: user?.companyId,
         value: parseFloat(data.value) || 0,
         probability: parseInt(data.probability) || 0,
       };
