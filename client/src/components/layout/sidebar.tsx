@@ -53,7 +53,11 @@ const navigationItems = [
   },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  mobile?: boolean;
+}
+
+export default function Sidebar({ mobile = false }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
 
@@ -61,8 +65,11 @@ export default function Sidebar() {
     window.location.href = "/api/logout";
   };
 
+  const baseClasses = "w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col safe-area-top";
+  const responsiveClasses = mobile ? baseClasses : `hidden md:flex ${baseClasses}`;
+
   return (
-    <div className="hidden md:flex w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-col safe-area-top">
+    <div className={responsiveClasses}>
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-3">
