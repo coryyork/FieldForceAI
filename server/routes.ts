@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
+import { db } from "./db";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { aiService } from "./services/aiService";
 import { 
@@ -9,8 +10,11 @@ import {
   insertDocumentSchema, 
   insertTaskSchema, 
   insertCompanySchema,
-  insertJobOpeningSchema 
+  insertJobOpeningSchema,
+  jobOpenings,
+  companies
 } from "@shared/schema";
+import { eq, and, desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -802,6 +806,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting job opening:", error);
       res.status(500).json({ message: "Failed to delete job opening" });
+    }
+  });
+
+  // Public Job Portal routes (no authentication required)
+  app.get("/api/public/job-openings", async (req: any, res) => {
+    try {
+      // Get all published job openings with company information
+      const publicJobOpenings = await db
+        .select({
+          id: jobOpenings.id,
+          title: jobOpenings.title,
+          description: jobOpenings.description,
+          department: jobOpenings.department,
+          location: jobOpenings.location,
+          employmentType: jobOpenings.employmentType,
+          experienceLevel: jobOpenings.experienceLevel,
+          salaryMin: jobOpenings.salaryMin,
+          salaryMax: jobOpenings.salaryMax,
+          requirements: jobOpenings.requirements,
+          benefits: jobOpenings.benefits,
+          applicationDeadline: jobOpenings.applicationDeadline,
+          createdAt: jobOpenings.createdAt,
+          companyName: companies.name,
+        })
+        .from(jobOpenings)
+        .innerJoin(companies, eq(jobOpenings.companyId, companies.id))
+        .where(
+          and(
+            eq(jobOpenings.status, "active"),
+            eq(jobOpenings.publishedOnPortal, true)
+          )
+        )
+        .orderBy(desc(jobOpenings.createdAt));
+
+      res.json(publicJobOpenings);
+    } catch (error) {
+      console.error("Error fetching public job openings:", error);
+      res.status(500).json({ message: "Failed to fetch public job openings" });
     }
   });
 

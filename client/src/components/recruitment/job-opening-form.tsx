@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormControl,
@@ -39,6 +40,7 @@ const jobOpeningSchema = z.object({
   requirements: z.array(z.string()).default([]),
   benefits: z.array(z.string()).default([]),
   status: z.enum(["active", "paused", "closed", "draft"]),
+  publishedOnPortal: z.boolean().default(false),
   applicationDeadline: z.string().optional(),
 });
 
@@ -71,6 +73,7 @@ export default function JobOpeningForm({ jobOpening, onSuccess, onCancel }: JobO
       requirements: jobOpening?.requirements || [],
       benefits: jobOpening?.benefits || [],
       status: jobOpening?.status || "draft",
+      publishedOnPortal: jobOpening?.publishedOnPortal || false,
       applicationDeadline: jobOpening?.applicationDeadline 
         ? new Date(jobOpening.applicationDeadline).toISOString().split('T')[0]
         : "",
@@ -262,7 +265,7 @@ export default function JobOpeningForm({ jobOpening, onSuccess, onCancel }: JobO
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FormField
             control={form.control}
             name="experienceLevel"
@@ -306,6 +309,30 @@ export default function JobOpeningForm({ jobOpening, onSuccess, onCancel }: JobO
                     <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="publishedOnPortal"
+            render={({ field }) => (
+              <FormItem className="flex flex-col justify-end">
+                <div className="flex items-center space-x-2">
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="text-sm font-medium">
+                    Publish on Job Portal
+                  </FormLabel>
+                </div>
+                <FormDescription>
+                  Make this job visible to external candidates
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

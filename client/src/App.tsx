@@ -15,6 +15,7 @@ import KnowledgeBase from "@/pages/knowledge-base";
 import AISettings from "@/pages/ai-settings";
 import TasksPage from "@/pages/tasks";
 import Recruitment from "@/pages/recruitment";
+import JobPortal from "@/pages/job-portal";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -25,6 +26,9 @@ function Router() {
 
   return (
     <Switch>
+      {/* Public routes - accessible without authentication */}
+      <Route path="/jobs" component={JobPortal} />
+      
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : needsOnboarding ? (

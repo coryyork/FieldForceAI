@@ -56,6 +56,13 @@ const navigationItems = [
     name: "Recruitment",
     href: "/recruitment",
     icon: Building2,
+    submenu: [
+      {
+        name: "Job Portal",
+        href: "/jobs",
+        icon: Building2,
+      },
+    ],
   },
   {
     name: "Analytics",

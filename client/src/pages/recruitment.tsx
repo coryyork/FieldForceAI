@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Building2, MapPin, Calendar, DollarSign, Users, MoreHorizontal, Edit, Trash, Eye } from "lucide-react";
+import { Plus, Building2, MapPin, Calendar, DollarSign, Users, MoreHorizontal, Edit, Trash, Eye, Globe, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
@@ -32,6 +32,7 @@ interface JobOpening {
   requirements: string[] | null;
   benefits: string[] | null;
   status: string;
+  publishedOnPortal: boolean;
   applicationDeadline: string | null;
   createdAt: string;
   updatedAt: string;
@@ -289,13 +290,28 @@ export default function Recruitment() {
                               </p>
                               
                               <div className="flex items-center justify-between mt-4">
-                                <div className="text-xs text-gray-500">
-                                  Created {format(new Date(jobOpening.createdAt), "MMM d, yyyy")}
-                                  {jobOpening.applicationDeadline && (
-                                    <span className="ml-2">
-                                      • Deadline: {format(new Date(jobOpening.applicationDeadline), "MMM d, yyyy")}
-                                    </span>
-                                  )}
+                                <div className="flex items-center space-x-4">
+                                  <div className="text-xs text-gray-500">
+                                    Created {format(new Date(jobOpening.createdAt), "MMM d, yyyy")}
+                                    {jobOpening.applicationDeadline && (
+                                      <span className="ml-2">
+                                        • Deadline: {format(new Date(jobOpening.applicationDeadline), "MMM d, yyyy")}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center text-xs">
+                                    {jobOpening.publishedOnPortal ? (
+                                      <div className="flex items-center text-green-600">
+                                        <Globe className="w-3 h-3 mr-1" />
+                                        Public
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center text-gray-400">
+                                        <EyeOff className="w-3 h-3 mr-1" />
+                                        Private
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
