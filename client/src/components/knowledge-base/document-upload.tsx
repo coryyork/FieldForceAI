@@ -21,6 +21,8 @@ const documentFormSchema = insertDocumentSchema.omit({
   fileType: true,
 }).extend({
   tags: z.string().optional(),
+  content: z.string().optional(),
+  isPublic: z.boolean(),
 });
 
 type DocumentFormData = z.infer<typeof documentFormSchema>;
@@ -57,8 +59,11 @@ export default function DocumentUpload({ onSuccess }: DocumentUploadProps) {
         fileSize: selectedFile ? selectedFile.size : (data.content?.length || 0),
       };
 
-      const response = await apiRequest("POST", "/api/documents", documentData);
-      return response.json();
+      const response = await apiRequest("/api/documents", {
+        method: "POST",
+        body: documentData,
+      });
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
