@@ -76,6 +76,9 @@ export default function VoiceChat({
       // Create a processor for handling audio chunks
       processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
       
+      console.log("Created ScriptProcessorNode, buffer size:", 4096);
+      console.log("Audio context sample rate:", audioContextRef.current.sampleRate);
+      
       console.log("Connecting to WebSocket...");
       // Connect to backend WebSocket endpoint  
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -181,13 +184,16 @@ export default function VoiceChat({
 
       let audioBuffer: Float32Array[] = [];
       let silenceCounter = 0;
+      let processedFrameCount = 0;
       const maxSilenceFrames = 50; // ~1 second of silence before committing
       
       // Process and send audio chunks
       processorRef.current.onaudioprocess = (e) => {
-        // Always log processing attempts for debugging
-        if (Math.random() < 0.05) { // 5% chance to avoid spam
-          console.log("Processing audio frame, ws ready:", ws.readyState === WebSocket.OPEN, "isListening:", isListening);
+        processedFrameCount++;
+        
+        // Log every 50 frames to see if processing is happening
+        if (processedFrameCount % 50 === 1) {
+          console.log(`Audio processing active! Frame count: ${processedFrameCount}, ws ready: ${ws.readyState === WebSocket.OPEN}, isListening: ${isListening}`);
         }
         
         // Remove muted check - we should always send audio to OpenAI for processing
@@ -254,11 +260,24 @@ export default function VoiceChat({
         }
       };
 
+      // Connect the audio nodes
       source.connect(processorRef.current);
       processorRef.current.connect(audioContextRef.current.destination);
       
       console.log("Audio processing connected successfully");
       console.log("Audio stream tracks:", stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
+      
+      // Test that the processor is working by logging immediately
+      console.log("Processor connected. Waiting for onaudioprocess events...");
+      
+      // Force audio context to stay active
+      const oscillator = audioContextRef.current.createOscillator();
+      const gainNode = audioContextRef.current.createGain();
+      gainNode.gain.setValueAtTime(0, audioContextRef.current.currentTime); // Silent
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContextRef.current.destination);
+      oscillator.start();
+      console.log("Started silent oscillator to keep audio context active");
 
     } catch (error) {
       console.error("Failed to connect to voice API:", error);
