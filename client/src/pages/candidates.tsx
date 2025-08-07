@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { StageBadge, type CandidateStage } from "@/components/recruitment/stage-selector";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import AIFab from "@/components/ai/ai-fab";
@@ -45,7 +46,7 @@ interface CandidateWithJobDetails {
   address: string;
   linkedinUrl: string | null;
   videoUrl: string | null;
-  status: string;
+  status: CandidateStage;
   notes: string | null;
   createdAt: string;
   jobTitle: string;
@@ -54,19 +55,21 @@ interface CandidateWithJobDetails {
   jobOpeningId: string;
 }
 
-const statusConfig = {
-  submitted: { label: "Submitted", color: "bg-blue-100 text-blue-800", icon: Clock },
-  reviewing: { label: "Reviewing", color: "bg-yellow-100 text-yellow-800", icon: Eye },
-  interviewed: { label: "Interviewed", color: "bg-purple-100 text-purple-800", icon: Video },
-  hired: { label: "Hired", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  rejected: { label: "Rejected", color: "bg-red-100 text-red-800", icon: XCircle },
-};
+const stageFilterOptions = [
+  { value: "all", label: "All Stages" },
+  { value: "applied", label: "Applied" },
+  { value: "1st_round", label: "1st Round Interview" },
+  { value: "2nd_round", label: "2nd Round Interview" },
+  { value: "offered", label: "Offered" },
+  { value: "accepted", label: "Accepted" },
+  { value: "rejected", label: "Rejected" },
+];
 
 export default function Candidates() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [stageFilter, setStageFilter] = useState<string>("all");
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateWithJobDetails | null>(null);
   const [statusUpdate, setStatusUpdate] = useState("");
   const [notes, setNotes] = useState("");
@@ -114,9 +117,9 @@ export default function Candidates() {
       candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       candidate.jobTitle.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || candidate.status === statusFilter;
+    const matchesStage = stageFilter === "all" || candidate.status === stageFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStage;
   });
 
   const handleUpdateCandidate = (e: React.FormEvent) => {
@@ -190,18 +193,17 @@ export default function Candidates() {
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={stageFilter} onValueChange={setStageFilter}>
           <SelectTrigger className="w-48">
             <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue placeholder="Filter by stage" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-            <SelectItem value="reviewing">Reviewing</SelectItem>
-            <SelectItem value="interviewed">Interviewed</SelectItem>
-            <SelectItem value="hired">Hired</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
+            {stageFilterOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -222,10 +224,6 @@ export default function Candidates() {
           </Card>
         ) : (
           filteredCandidates.map((candidate) => {
-            const StatusIcon = statusConfig[candidate.status as keyof typeof statusConfig]?.icon || User;
-            const statusStyle = statusConfig[candidate.status as keyof typeof statusConfig]?.color || "bg-gray-100 text-gray-800";
-            const statusLabel = statusConfig[candidate.status as keyof typeof statusConfig]?.label || candidate.status;
-
             return (
               <Card key={candidate.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
@@ -242,10 +240,7 @@ export default function Candidates() {
                             Applied for: <span className="font-medium ml-1">{candidate.jobTitle}</span>
                           </div>
                         </div>
-                        <Badge className={`${statusStyle} border-0`}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {statusLabel}
-                        </Badge>
+                        <StageBadge stage={candidate.status} />
                       </div>
 
                       {/* Contact Info */}

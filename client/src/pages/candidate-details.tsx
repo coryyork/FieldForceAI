@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { StageSelector, type CandidateStage } from "@/components/recruitment/stage-selector";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import AIFab from "@/components/ai/ai-fab";
@@ -40,7 +41,8 @@ interface CandidateWithJobDetails {
   address: string;
   linkedinUrl: string | null;
   videoUrl: string | null;
-  status: string;
+  status: CandidateStage;
+  stageUpdatedAt: string;
   notes: string | null;
   createdAt: string;
   jobTitle: string;
@@ -49,13 +51,7 @@ interface CandidateWithJobDetails {
   jobOpeningId: string;
 }
 
-const statusConfig = {
-  submitted: { label: "Submitted", color: "bg-blue-100 text-blue-800", icon: Clock },
-  reviewing: { label: "Reviewing", color: "bg-yellow-100 text-yellow-800", icon: User },
-  interviewed: { label: "Interviewed", color: "bg-purple-100 text-purple-800", icon: Video },
-  hired: { label: "Hired", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  rejected: { label: "Rejected", color: "bg-red-100 text-red-800", icon: XCircle },
-};
+
 
 export default function CandidateDetails() {
   const { isAuthenticated } = useAuth();
@@ -64,7 +60,6 @@ export default function CandidateDetails() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [statusUpdate, setStatusUpdate] = useState("");
   const [notes, setNotes] = useState("");
 
   const candidateId = params.id;
@@ -75,44 +70,55 @@ export default function CandidateDetails() {
     enabled: isAuthenticated && !!candidateId,
   });
 
-  // Update candidate mutation
-  const updateCandidateMutation = useMutation({
-    mutationFn: async ({ status, notes }: { status: string; notes: string }) => {
+  // Update notes mutation
+  const updateNotesMutation = useMutation({
+    mutationFn: async (data: { notes: string }) => {
       return apiRequest(`/api/job-applications/${candidateId}`, {
         method: "PUT",
-        body: { status, notes },
+        body: data,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/job-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/job-applications", candidateId] });
       toast({
-        title: "Candidate Updated",
-        description: "Candidate status and notes have been updated successfully.",
+        title: "Notes updated successfully",
       });
       setIsEditing(false);
     },
-    onError: (error: any) => {
+  });
+
+  // Update stage mutation
+  const updateStageMutation = useMutation({
+    mutationFn: async (data: { status: CandidateStage }) => {
+      return apiRequest(`/api/job-applications/${candidateId}`, {
+        method: "PUT", 
+        body: data,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/job-applications", candidateId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/job-applications"] });
       toast({
-        title: "Update Failed",
-        description: error.message || "Failed to update candidate",
-        variant: "destructive",
+        title: "Candidate stage updated successfully",
       });
     },
   });
 
-  const handleUpdateCandidate = (e: React.FormEvent) => {
+  const handleUpdateNotes = (e: React.FormEvent) => {
     e.preventDefault();
     if (!candidate) return;
 
-    updateCandidateMutation.mutate({
-      status: statusUpdate || candidate.status,
+    updateNotesMutation.mutate({
       notes: notes,
     });
   };
 
+  const handleStageChange = (newStage: CandidateStage) => {
+    updateStageMutation.mutate({ status: newStage });
+  };
+
   const startEditing = () => {
     if (candidate) {
-      setStatusUpdate(candidate.status);
       setNotes(candidate.notes || "");
       setIsEditing(true);
     }
@@ -167,9 +173,7 @@ export default function CandidateDetails() {
     );
   }
 
-  const StatusIcon = statusConfig[candidate.status as keyof typeof statusConfig]?.icon || User;
-  const statusStyle = statusConfig[candidate.status as keyof typeof statusConfig]?.color || "bg-gray-100 text-gray-800";
-  const statusLabel = statusConfig[candidate.status as keyof typeof statusConfig]?.label || candidate.status;
+  // Stage display is now handled by StageSelector component
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
@@ -199,14 +203,15 @@ export default function CandidateDetails() {
                 </div>
               </div>
               <div className="flex items-center space-x-3">
-                <Badge className={`${statusStyle} border-0`}>
-                  <StatusIcon className="w-3 h-3 mr-1" />
-                  {statusLabel}
-                </Badge>
+                <StageSelector 
+                  stage={candidate.status}
+                  onStageChange={handleStageChange}
+                  disabled={updateStageMutation.isPending}
+                />
                 {!isEditing && (
                   <Button onClick={startEditing} size="sm">
                     <Edit className="w-4 h-4 mr-2" />
-                    Update Status
+                    Update Notes
                   </Button>
                 )}
               </div>
@@ -380,25 +385,7 @@ export default function CandidateDetails() {
               </CardHeader>
               <CardContent>
                 {isEditing ? (
-                  <form onSubmit={handleUpdateCandidate} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="status">Status</Label>
-                        <Select value={statusUpdate} onValueChange={setStatusUpdate}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="submitted">Submitted</SelectItem>
-                            <SelectItem value="reviewing">Reviewing</SelectItem>
-                            <SelectItem value="interviewed">Interviewed</SelectItem>
-                            <SelectItem value="hired">Hired</SelectItem>
-                            <SelectItem value="rejected">Rejected</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
+                  <form onSubmit={handleUpdateNotes} className="space-y-4">
                     <div>
                       <Label htmlFor="notes">Internal Notes</Label>
                       <Textarea
@@ -415,25 +402,31 @@ export default function CandidateDetails() {
                         type="button" 
                         variant="outline" 
                         onClick={() => setIsEditing(false)}
-                        disabled={updateCandidateMutation.isPending}
+                        disabled={updateNotesMutation.isPending}
                       >
                         Cancel
                       </Button>
-                      <Button type="submit" disabled={updateCandidateMutation.isPending}>
-                        {updateCandidateMutation.isPending ? "Updating..." : "Save Changes"}
+                      <Button type="submit" disabled={updateNotesMutation.isPending}>
+                        {updateNotesMutation.isPending ? "Updating..." : "Save Notes"}
                       </Button>
                     </div>
                   </form>
                 ) : (
                   <div className="space-y-4">
                     <div>
-                      <Label>Current Status</Label>
-                      <div className="mt-1">
-                        <Badge className={`${statusStyle} border-0`}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {statusLabel}
-                        </Badge>
+                      <Label>Current Stage</Label>
+                      <div className="mt-2">
+                        <StageSelector 
+                          stage={candidate.status}
+                          onStageChange={handleStageChange}
+                          disabled={updateStageMutation.isPending}
+                        />
                       </div>
+                      {candidate.stageUpdatedAt && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          Stage last updated: {format(new Date(candidate.stageUpdatedAt), "MMM dd, yyyy 'at' h:mm a")}
+                        </p>
+                      )}
                     </div>
                     {candidate.notes ? (
                       <div>

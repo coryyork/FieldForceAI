@@ -6,6 +6,12 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 
 ## Recent Changes (August 2025)
 
+- **Candidate Pipeline Stages**: Complete stage tracking system with 6 stages: Applied, 1st Round Interview, 2nd Round Interview, Offered, Accepted, Rejected
+- **Stage Management UI**: Interactive stage selector component with color-coded badges and icons for each recruitment stage
+- **Stage Filtering**: Advanced filtering in candidates list page to filter by specific stages
+- **Stage History**: Automatic tracking of stage updates with timestamps for audit trail
+- **Calendar Booking Integration**: Optional calendar booking URLs in job openings for automatic interview scheduling after application submission
+- **Enhanced Video Display**: Improved video handling with informative messages for expired blob URLs and placeholder content
 - **Recruitment Management**: Complete job opening management system with CRUD operations
 - **Job Opening Features**: Title, description, department, location, employment type, experience level, salary range, requirements, benefits, status, and application deadlines
 - **Recruitment Dashboard**: Overview statistics, job opening cards with detailed information, and bulk management capabilities
@@ -64,7 +70,8 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 - **Leads**: CRM functionality with stage tracking and value management
 - **Documents**: Knowledge base with content search and tagging capabilities
 - **Tasks**: Project management with priority and status tracking
-- **Job Openings**: Recruitment management with requirements, benefits, salary ranges, and application tracking
+- **Job Openings**: Recruitment management with requirements, benefits, salary ranges, calendar booking URLs, and comprehensive application tracking
+- **Job Applications**: Candidate pipeline management with stage progression tracking (Applied → 1st Round → 2nd Round → Offered → Accepted/Rejected)
 - **Activities**: Audit trail for business actions and user interactions
 
 ### Authentication and Authorization

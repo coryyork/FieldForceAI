@@ -854,7 +854,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const applicationData = { 
         status: req.body.status,
-        notes: req.body.notes 
+        notes: req.body.notes,
+        ...(req.body.status && { stageUpdatedAt: new Date() })
       };
 
       const updatedApplication = await storage.updateJobApplication(

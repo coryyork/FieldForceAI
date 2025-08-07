@@ -292,7 +292,8 @@ export const jobApplications = pgTable("job_applications", {
   address: text("address").notNull(),
   linkedinUrl: varchar("linkedin_url"),
   videoUrl: varchar("video_url"), // Stored video file URL or blob reference
-  status: varchar("status").notNull().default("submitted"), // submitted, reviewing, interviewed, hired, rejected
+  status: varchar("status").notNull().default("applied"), // applied, 1st_round, 2nd_round, offered, accepted, rejected
+  stageUpdatedAt: timestamp("stage_updated_at").defaultNow(),
   notes: text("notes"), // Internal notes from recruiters
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
