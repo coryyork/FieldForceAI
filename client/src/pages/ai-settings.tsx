@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -60,23 +60,25 @@ export default function AISettings() {
   });
 
   // Update form when settings are loaded
-  if (settings && !form.formState.isDirty) {
-    let keywords: string[] = [];
-    try {
-      keywords = settings.personalityKeywords ? JSON.parse(settings.personalityKeywords) : [];
-    } catch {
-      keywords = [];
+  React.useEffect(() => {
+    if (settings && !form.formState.isDirty) {
+      let keywords: string[] = [];
+      try {
+        keywords = settings.personalityKeywords ? JSON.parse(settings.personalityKeywords) : [];
+      } catch {
+        keywords = [];
+      }
+      
+      form.reset({
+        aiName: settings.aiName || "AI Assistant",
+        personalityKeywords: keywords,
+        autoSuggestions: settings.autoSuggestions ?? true,
+        voiceEnabled: settings.voiceEnabled ?? false,
+        voiceId: (settings.voiceId as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer") || "alloy",
+        voiceSpeed: settings.voiceSpeed ? parseFloat(settings.voiceSpeed.toString()) : 1.0,
+      });
     }
-    
-    form.reset({
-      aiName: settings.aiName || "AI Assistant",
-      personalityKeywords: keywords,
-      autoSuggestions: settings.autoSuggestions ?? true,
-      voiceEnabled: settings.voiceEnabled ?? false,
-      voiceId: settings.voiceId || "alloy",
-      voiceSpeed: settings.voiceSpeed ? parseFloat(settings.voiceSpeed.toString()) : 1.0,
-    });
-  }
+  }, [settings]);
 
   const mutation = useMutation({
     mutationFn: async (data: AISettingsData) => {

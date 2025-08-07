@@ -37,7 +37,7 @@ export default function AIFab() {
   const { data: aiSettings } = useQuery<{
     voiceEnabled?: boolean;
     voiceId?: string;
-    personalityDescription?: string;
+    personalityKeywords?: string;
   }>({
     queryKey: ["/api/ai-settings"],
     retry: false,
@@ -188,7 +188,14 @@ export default function AIFab() {
           type: "session.update",
           session: {
             voice: aiSettings?.voiceId || "alloy",
-            instructions: aiSettings?.personalityDescription || "You are a helpful AI assistant for Field Force 2.",
+            instructions: aiSettings?.personalityKeywords ? (() => {
+              try {
+                const keywords = JSON.parse(aiSettings.personalityKeywords);
+                return `You are a helpful AI assistant for Field Force 2. Your personality traits: ${keywords.join(", ")}`;
+              } catch {
+                return "You are a helpful AI assistant for Field Force 2.";
+              }
+            })() : "You are a helpful AI assistant for Field Force 2.",
             input_audio_format: "pcm16",
             output_audio_format: "pcm16",
             turn_detection: {

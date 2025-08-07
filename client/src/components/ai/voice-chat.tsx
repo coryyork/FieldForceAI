@@ -24,7 +24,7 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
   // Get AI settings including voice preferences
   const { data: aiSettings } = useQuery<{
     aiName?: string;
-    personalityDescription?: string;
+    personalityKeywords?: string;
     voiceId?: string;
     voiceEnabled?: boolean;
     voiceSpeed?: number;
@@ -76,7 +76,14 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
           type: "session.update",
           session: {
             voice: aiSettings?.voiceId || "alloy",
-            instructions: aiSettings?.personalityDescription || "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions.",
+            instructions: aiSettings?.personalityKeywords ? (() => {
+              try {
+                const keywords = JSON.parse(aiSettings.personalityKeywords);
+                return `You are a helpful AI assistant for a business management platform called Field Force 2. Your personality traits: ${keywords.join(", ")}. Help users with their leads, tasks, documents, and business questions.`;
+              } catch {
+                return "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions.";
+              }
+            })() : "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions.",
             input_audio_format: "pcm16",
             output_audio_format: "pcm16",
             input_audio_transcription: { model: "whisper-1" },
