@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Sidebar from "@/components/layout/sidebar";
@@ -18,29 +18,29 @@ import { useLocation } from "wouter";
 
 export default function CRM() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [isNewLeadOpen, setIsNewLeadOpen] = useState(false);
 
-  // Redirect to home if not authenticated
+  // Redirect to auth if not authenticated
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !user) {
       toast({
         title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        description: "Please login to continue",
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        setLocation("/auth");
       }, 500);
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
+  }, [user, isLoading, toast, setLocation]);
 
   const { data: leads = [], isLoading: leadsLoading } = useQuery<any[]>({
     queryKey: ["/api/leads"],
-    enabled: isAuthenticated,
+    enabled: !!user,
   });
 
   const deleteLeadMutation = useMutation({

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { useState } from "react";
 import { 
   Zap, 
@@ -93,11 +93,11 @@ interface SidebarProps {
 
 export default function Sidebar({ mobile = false }: SidebarProps) {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [expandedMenus, setExpandedMenus] = useState<string[]>(["AI Assistant", "Recruitment"]);
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logoutMutation.mutate();
   };
 
   const toggleMenu = (itemName: string) => {

@@ -3,9 +3,10 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 import { ThemeProvider } from "@/hooks/use-theme";
-import Landing from "@/pages/landing";
+import AuthPage from "@/pages/auth-page";
 import Onboarding from "@/pages/onboarding";
 import Dashboard from "@/pages/dashboard";
 import CRM from "@/pages/crm";
@@ -22,36 +23,35 @@ import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { user, isLoading } = useAuth();
   
   // Show onboarding if user is authenticated but doesn't have a company
-  const needsOnboarding = isAuthenticated && user && !user.companyId;
+  const needsOnboarding = user && !user.companyId;
+
+  if (needsOnboarding) {
+    return <Onboarding />;
+  }
 
   return (
     <Switch>
       {/* Public routes - accessible without authentication */}
+      <Route path="/auth" component={AuthPage} />
       <Route path="/jobs" component={JobPortal} />
       <Route path="/jobs/:jobId" component={JobPortal} />
       
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : needsOnboarding ? (
-        <Route path="/" component={Onboarding} />
-      ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/sales" component={CRM} />
-          <Route path="/sales/lead/:id" component={LeadDetails} />
-          <Route path="/ai-assistant" component={AIAssistant} />
-          <Route path="/knowledge-base" component={KnowledgeBase} />
-          <Route path="/ai-settings" component={AISettings} />
-          <Route path="/tasks" component={TasksPage} />
-          <Route path="/recruitment" component={Recruitment} />
-          <Route path="/candidates" component={Candidates} />
-          <Route path="/candidates/:id" component={CandidateDetails} />
-          <Route path="/settings" component={Settings} />
-        </>
-      )}
+      {/* Protected routes - require authentication */}
+      <ProtectedRoute path="/" component={Dashboard} />
+      <ProtectedRoute path="/sales" component={CRM} />
+      <ProtectedRoute path="/sales/lead/:id" component={LeadDetails} />
+      <ProtectedRoute path="/ai-assistant" component={AIAssistant} />
+      <ProtectedRoute path="/knowledge-base" component={KnowledgeBase} />
+      <ProtectedRoute path="/ai-settings" component={AISettings} />
+      <ProtectedRoute path="/tasks" component={TasksPage} />
+      <ProtectedRoute path="/recruitment" component={Recruitment} />
+      <ProtectedRoute path="/candidates" component={Candidates} />
+      <ProtectedRoute path="/candidates/:id" component={CandidateDetails} />
+      <ProtectedRoute path="/settings" component={Settings} />
+      
       <Route component={NotFound} />
     </Switch>
   );
@@ -61,10 +61,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

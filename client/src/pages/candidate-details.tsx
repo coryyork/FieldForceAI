@@ -30,7 +30,7 @@ import { StageSelector, type CandidateStage } from "@/components/recruitment/sta
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import AIFab from "@/components/ai/ai-fab";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 
 interface CandidateWithJobDetails {
   id: string;

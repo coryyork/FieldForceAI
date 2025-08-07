@@ -5,7 +5,7 @@ import { Link } from "wouter";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import AIFab from "@/components/ai/ai-fab";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 
 const settingsCategories = [
   {

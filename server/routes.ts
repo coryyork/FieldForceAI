@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { db } from "./db";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import { aiService } from "./services/aiService";
 import { 
   insertLeadSchema, 
@@ -25,7 +25,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -57,12 +57,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update user with company ID
       await storage.upsertUser({
-        id: req.user.claims.sub,
+        id: req.user.id,
         companyId: company.id,
-        email: req.user.claims.email,
-        firstName: req.user.claims.first_name,
-        lastName: req.user.claims.last_name,
-        profileImageUrl: req.user.claims.profile_image_url,
+        username: req.user.username,
+        email: req.user.email,
+        password: req.user.password,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        profileImageUrl: req.user.profileImageUrl,
         role: "owner",
       });
       
@@ -89,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead routes
   app.get("/api/leads", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -104,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/leads/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
