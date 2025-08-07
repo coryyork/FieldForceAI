@@ -286,6 +286,9 @@ export const aiSettings = pgTable("ai_settings", {
   personalityDescription: text("personality_description"),
   responseStyle: varchar("response_style").notNull().default("professional"),
   autoSuggestions: boolean("auto_suggestions").notNull().default(true),
+  voiceEnabled: boolean("voice_enabled").notNull().default(false),
+  voiceId: varchar("voice_id").notNull().default("alloy"),
+  voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).notNull().default("1.0"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

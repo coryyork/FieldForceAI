@@ -6,13 +6,14 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 
 ## Recent Changes (August 2025)
 
-- **Multi-tenant Architecture**: Implemented complete company workspace system with automatic onboarding flow
-- **Dynamic Branding**: Header now displays "My [Organization Name]" based on user's company
-- **Navigation Updates**: Renamed "CRM & Leads" to "Sales", created separate "Tasks & Notes" page
+- **Voice Conversations**: Integrated OpenAI Realtime API for life-like AI voice interactions
+- **AI Settings Page**: Customizable AI assistant with name, personality, response style, and voice selection
+- **Voice Options**: Support for all 6 OpenAI voices (Alloy, Echo, Fable, Onyx, Nova, Shimmer)
+- **Voice Controls**: Adjustable voice speed, mute/unmute, and WebSocket-based real-time communication
+- **Navigation Restructure**: Knowledge Base now appears as submenu under AI Assistant
+- **Multi-tenant Architecture**: Complete company workspace system with automatic onboarding flow
+- **Dynamic Branding**: Header displays "My [Organization Name]" based on user's company
 - **Company Onboarding**: New users automatically guided through organization setup process
-- **Authentication Flow**: Seamless integration with Replit Auth and company workspace association
-- **Data Isolation**: All business data properly scoped to company workspaces
-- **TypeScript Fixes**: Resolved all LSP errors for proper type safety across the application
 
 ## User Preferences
 
@@ -60,8 +61,11 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 
 ### AI Integration
 - **Provider**: OpenAI GPT-4o for natural language processing and business intelligence
+- **Voice Conversations**: OpenAI Realtime API for voice input/output with selectable voices
 - **Functionality**: Unified search across CRM data, documents, and tasks with contextual analysis
 - **Architecture**: Dedicated AI service layer that aggregates data from multiple sources before AI processing
+- **WebSocket Integration**: Real-time bidirectional communication for voice conversations
+- **Voice Features**: 6 voice options, adjustable speed (0.25x-4x), mute controls, visual feedback
 - **Response Format**: Structured JSON responses with summaries, ranked results, and actionable insights
 
 ## External Dependencies

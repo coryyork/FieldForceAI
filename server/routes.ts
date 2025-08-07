@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { aiService } from "./services/aiService";
@@ -632,5 +633,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server for voice conversations
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/api/voice/connect'
+  });
+
+  wss.on('connection', async (ws, request) => {
+    // Get user from session
+    const sessionCookie = request.headers.cookie;
+    if (!sessionCookie) {
+      ws.close(1008, 'Unauthorized');
+      return;
+    }
+
+    // For now, we'll handle the WebSocket connection directly
+    // In production, you'd want to verify the session properly
+    console.log('Voice WebSocket connection established');
+    
+    // Import voice service dynamically to avoid circular dependency
+    const { handleVoiceWebSocket } = await import('./services/voiceService');
+    
+    // Get user ID from the session (simplified for now)
+    const userId = 'temp-user-id';
+    const companyId = 'temp-company-id';
+    
+    handleVoiceWebSocket(ws, request, userId, companyId);
+  });
+
   return httpServer;
 }

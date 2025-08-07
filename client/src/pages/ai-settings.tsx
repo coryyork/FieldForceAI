@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { Brain, Bot, Sparkles, Save, RotateCcw } from "lucide-react";
+import { Brain, Bot, Sparkles, Save, RotateCcw, Mic, Volume2 } from "lucide-react";
 import { z } from "zod";
 
 const aiSettingsSchema = z.object({
@@ -22,6 +22,9 @@ const aiSettingsSchema = z.object({
   personalityDescription: z.string().max(500, "Description must be 500 characters or less").optional(),
   responseStyle: z.enum(["professional", "casual", "friendly", "technical"]),
   autoSuggestions: z.boolean(),
+  voiceEnabled: z.boolean(),
+  voiceId: z.enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]),
+  voiceSpeed: z.number().min(0.25).max(4.0),
 });
 
 type AISettingsData = z.infer<typeof aiSettingsSchema>;
@@ -37,6 +40,9 @@ export default function AISettings() {
       personalityDescription: "",
       responseStyle: "professional",
       autoSuggestions: true,
+      voiceEnabled: false,
+      voiceId: "alloy",
+      voiceSpeed: 1.0,
     },
   });
 
@@ -53,6 +59,9 @@ export default function AISettings() {
       personalityDescription: settings.personalityDescription || "",
       responseStyle: settings.responseStyle || "professional",
       autoSuggestions: settings.autoSuggestions ?? true,
+      voiceEnabled: settings.voiceEnabled ?? false,
+      voiceId: settings.voiceId || "alloy",
+      voiceSpeed: settings.voiceSpeed ? parseFloat(settings.voiceSpeed) : 1.0,
     });
   }
 
@@ -101,6 +110,9 @@ export default function AISettings() {
       personalityDescription: "",
       responseStyle: "professional",
       autoSuggestions: true,
+      voiceEnabled: false,
+      voiceId: "alloy",
+      voiceSpeed: 1.0,
     });
   };
 
@@ -251,6 +263,119 @@ export default function AISettings() {
                     </FormItem>
                   )}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Voice Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Mic className="w-5 h-5 text-electric-blue" />
+                  <span>Voice Settings</span>
+                </CardTitle>
+                <CardDescription>
+                  Enable voice conversations with your AI assistant using OpenAI's realistic voices
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="voiceEnabled"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Enable Voice Conversations</FormLabel>
+                        <FormDescription>
+                          Allow voice input and audio responses for more natural interactions
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          className="w-4 h-4 text-electric-blue rounded border-gray-300 focus:ring-electric-blue"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("voiceEnabled") && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="voiceId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center space-x-2">
+                            <Volume2 className="w-4 h-4 text-electric-blue" />
+                            <span>Voice Selection</span>
+                          </FormLabel>
+                          <FormDescription>
+                            Choose a voice personality for your AI assistant
+                          </FormDescription>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                            {[
+                              { value: "alloy", label: "Alloy", desc: "Neutral and balanced" },
+                              { value: "echo", label: "Echo", desc: "Warm and engaging" },
+                              { value: "fable", label: "Fable", desc: "Expressive and dynamic" },
+                              { value: "onyx", label: "Onyx", desc: "Deep and authoritative" },
+                              { value: "nova", label: "Nova", desc: "Friendly and energetic" },
+                              { value: "shimmer", label: "Shimmer", desc: "Clear and articulate" },
+                            ].map((voice) => (
+                              <div
+                                key={voice.value}
+                                onClick={() => field.onChange(voice.value)}
+                                className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                                  field.value === voice.value
+                                    ? "border-electric-blue bg-electric-blue/5"
+                                    : "border-gray-200 dark:border-gray-700 hover:border-electric-blue/50"
+                                }`}
+                              >
+                                <div className="font-medium text-sm">{voice.label}</div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                  {voice.desc}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="voiceSpeed"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Voice Speed</FormLabel>
+                          <FormDescription>
+                            Adjust the speaking pace (0.25x - 4.0x)
+                          </FormDescription>
+                          <div className="flex items-center space-x-4">
+                            <span className="text-sm text-gray-600">Slower</span>
+                            <input
+                              type="range"
+                              min="0.25"
+                              max="4"
+                              step="0.25"
+                              value={field.value}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                              className="flex-1"
+                            />
+                            <span className="text-sm text-gray-600">Faster</span>
+                            <div className="w-12 text-center font-medium">
+                              {field.value}x
+                            </div>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
               </CardContent>
             </Card>
 

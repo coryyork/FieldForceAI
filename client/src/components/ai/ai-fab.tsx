@@ -4,9 +4,10 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, MessageCircle, X, User, Loader2 } from "lucide-react";
+import { Bot, MessageCircle, X, User, Loader2, Mic } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import AISearchBar from "./ai-search-bar";
+import VoiceChat from "./voice-chat";
 
 interface ChatMessage {
   id: string;
@@ -17,6 +18,7 @@ interface ChatMessage {
 
 export default function AIFab() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [, setLocation] = useLocation();
 
@@ -164,6 +166,15 @@ export default function AIFab() {
                 AI Assistant
               </div>
               <div className="flex items-center space-x-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsVoiceChatOpen(true)}
+                  className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
+                  title="Start voice conversation"
+                >
+                  <Mic className="w-4 h-4" />
+                </Button>
                 {messages.length > 0 && (
                   <Button
                     variant="ghost"
@@ -303,6 +314,12 @@ export default function AIFab() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Voice Chat Modal */}
+      <VoiceChat 
+        isOpen={isVoiceChatOpen} 
+        onClose={() => setIsVoiceChatOpen(false)} 
+      />
     </>
   );
 }
