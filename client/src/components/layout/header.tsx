@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import AISearchBar from "@/components/ai/ai-search-bar";
 import { Button } from "@/components/ui/button";
 import { Bell, HelpCircle, Menu, Search } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -56,16 +55,6 @@ export default function Header() {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-4">
-          {/* Desktop AI Search Bar */}
-          <div className="hidden lg:block">
-            <AISearchBar 
-              onSearch={handleSearch} 
-              onChat={handleChat}
-              placeholder="Ask AI about your business data..."
-              compact
-            />
-          </div>
-
           {/* Mobile search button */}
           <Button 
             variant="ghost" 
@@ -88,15 +77,12 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Search Bar */}
+      {/* Mobile Search Bar - Placeholder for future implementation */}
       {isMobileSearchOpen && (
         <div className="mt-4 lg:hidden">
-          <AISearchBar 
-            onSearch={handleSearch} 
-            onChat={handleChat}
-            placeholder="Ask AI about your business data..."
-            compact
-          />
+          <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-center text-gray-600 dark:text-gray-400">
+            Use the AI assistant button in the bottom right corner
+          </div>
         </div>
       )}
     </header>

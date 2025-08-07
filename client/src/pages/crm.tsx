@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import AIFab from "@/components/ai/ai-fab";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -286,6 +287,9 @@ export default function CRM() {
           </div>
         </main>
       </div>
+      
+      {/* AI Floating Action Button */}
+      <AIFab />
     </div>
   );
 }

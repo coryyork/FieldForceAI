@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import AIFab from "@/components/ai/ai-fab";
 import MetricCard from "@/components/dashboard/metric-card";
 import RecentLeads from "@/components/dashboard/recent-leads";
 import QuickActions from "@/components/dashboard/quick-actions";
@@ -128,6 +129,9 @@ export default function Dashboard() {
           <ActivityTimeline />
         </main>
       </div>
+      
+      {/* AI Floating Action Button */}
+      <AIFab />
     </div>
   );
 }

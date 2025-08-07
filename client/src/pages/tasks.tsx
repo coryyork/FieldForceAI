@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Plus, Calendar, User, AlertCircle } from "lucide-react";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import AIFab from "@/components/ai/ai-fab";
 import TaskForm from "@/components/tasks/task-form";
 import type { Task } from "@shared/schema";
 
@@ -157,6 +158,9 @@ export default function TasksPage() {
           </div>
         </main>
       </div>
+      
+      {/* AI Floating Action Button */}
+      <AIFab />
     </div>
   );
 }

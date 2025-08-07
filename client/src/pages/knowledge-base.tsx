@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import AIFab from "@/components/ai/ai-fab";
 import DocumentUpload from "@/components/knowledge-base/document-upload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,10 +58,11 @@ export default function KnowledgeBase() {
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const filteredDocuments = documents?.filter((doc: any) =>
+  const filteredDocuments = (documents || []).filter((doc: any) =>
     doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doc.content?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+    doc.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    doc.tags?.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -218,6 +220,9 @@ export default function KnowledgeBase() {
           </div>
         </main>
       </div>
+      
+      {/* AI Floating Action Button */}
+      <AIFab />
     </div>
   );
 }
