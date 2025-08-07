@@ -138,14 +138,14 @@ export default function AISettings() {
     const keyword = keywordInput.trim();
     if (keyword && !form.getValues("personalityKeywords").includes(keyword)) {
       const currentKeywords = form.getValues("personalityKeywords");
-      form.setValue("personalityKeywords", [...currentKeywords, keyword]);
+      form.setValue("personalityKeywords", [...currentKeywords, keyword], { shouldDirty: true });
       setKeywordInput("");
     }
   };
 
   const removeKeyword = (keywordToRemove: string) => {
     const currentKeywords = form.getValues("personalityKeywords");
-    form.setValue("personalityKeywords", currentKeywords.filter(k => k !== keywordToRemove));
+    form.setValue("personalityKeywords", currentKeywords.filter(k => k !== keywordToRemove), { shouldDirty: true });
   };
 
   const handleKeywordKeyPress = (e: React.KeyboardEvent) => {
