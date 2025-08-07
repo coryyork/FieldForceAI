@@ -8,7 +8,8 @@ import {
   insertLeadSchema, 
   insertDocumentSchema, 
   insertTaskSchema, 
-  insertCompanySchema 
+  insertCompanySchema,
+  insertJobOpeningSchema 
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -669,6 +670,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error saving AI settings:", error);
       res.status(500).json({ message: "Failed to save AI settings" });
+    }
+  });
+
+  // Job Opening routes
+  app.get("/api/job-openings", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const jobOpenings = await storage.getJobOpenings(user.companyId);
+      res.json(jobOpenings);
+    } catch (error) {
+      console.error("Error fetching job openings:", error);
+      res.status(500).json({ message: "Failed to fetch job openings" });
+    }
+  });
+
+  app.get("/api/job-openings/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const jobOpening = await storage.getJobOpening(req.params.id, user.companyId);
+      if (!jobOpening) {
+        return res.status(404).json({ message: "Job opening not found" });
+      }
+      res.json(jobOpening);
+    } catch (error) {
+      console.error("Error fetching job opening:", error);
+      res.status(500).json({ message: "Failed to fetch job opening" });
+    }
+  });
+
+  app.post("/api/job-openings", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const jobOpeningData = insertJobOpeningSchema.parse({
+        ...req.body,
+        companyId: user.companyId,
+        createdBy: req.user.claims.sub,
+        applicationDeadline: req.body.applicationDeadline ? new Date(req.body.applicationDeadline) : undefined,
+      });
+
+      const jobOpening = await storage.createJobOpening(jobOpeningData);
+      
+      // Log activity
+      await storage.createActivity({
+        companyId: user.companyId,
+        userId: req.user.claims.sub,
+        type: "job_opening_created",
+        description: `Created job opening "${jobOpening.title}"`,
+        entityType: "job_opening",
+        entityId: jobOpening.id,
+      });
+
+      res.json(jobOpening);
+    } catch (error) {
+      console.error("Error creating job opening:", error);
+      res.status(500).json({ message: "Failed to create job opening" });
+    }
+  });
+
+  app.put("/api/job-openings/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const updateData = {
+        ...req.body,
+        applicationDeadline: req.body.applicationDeadline ? new Date(req.body.applicationDeadline) : undefined,
+      };
+      delete updateData.companyId; // Don't allow changing company
+      delete updateData.createdBy; // Don't allow changing creator
+
+      const jobOpening = await storage.updateJobOpening(req.params.id, user.companyId, updateData);
+      
+      // Log activity
+      await storage.createActivity({
+        companyId: user.companyId,
+        userId: req.user.claims.sub,
+        type: "job_opening_updated",
+        description: `Updated job opening "${jobOpening.title}"`,
+        entityType: "job_opening",
+        entityId: jobOpening.id,
+      });
+
+      res.json(jobOpening);
+    } catch (error) {
+      console.error("Error updating job opening:", error);
+      res.status(500).json({ message: "Failed to update job opening" });
+    }
+  });
+
+  app.delete("/api/job-openings/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      // Get job opening for logging before deletion
+      const jobOpening = await storage.getJobOpening(req.params.id, user.companyId);
+      if (!jobOpening) {
+        return res.status(404).json({ message: "Job opening not found" });
+      }
+
+      await storage.deleteJobOpening(req.params.id, user.companyId);
+      
+      // Log activity
+      await storage.createActivity({
+        companyId: user.companyId,
+        userId: req.user.claims.sub,
+        type: "job_opening_deleted",
+        description: `Deleted job opening "${jobOpening.title}"`,
+        entityType: "job_opening",
+        entityId: jobOpening.id,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting job opening:", error);
+      res.status(500).json({ message: "Failed to delete job opening" });
     }
   });
 

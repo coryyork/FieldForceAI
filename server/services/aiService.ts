@@ -20,14 +20,16 @@ export class AIService {
       let allLeads: any[] = [];
       let allDocuments: any[] = [];
       let allTasks: any[] = [];
-      const analysisKeywords = ['top', 'best', 'high', 'recent', 'latest', 'newest', 'oldest', 'biggest', 'largest', 'most', 'all', 'my leads', 'show leads', 'docs', 'documents', 'have access'];
+      let allJobOpenings: any[] = [];
+      const analysisKeywords = ['top', 'best', 'high', 'recent', 'latest', 'newest', 'oldest', 'biggest', 'largest', 'most', 'all', 'my leads', 'show leads', 'docs', 'documents', 'have access', 'job', 'jobs', 'recruitment', 'hiring', 'openings'];
       const needsAnalysis = analysisKeywords.some(keyword => query.toLowerCase().includes(keyword));
       
-      if (needsAnalysis || (searchResults.leads.length === 0 && searchResults.documents.length === 0 && searchResults.tasks.length === 0)) {
+      if (needsAnalysis || (searchResults.leads.length === 0 && searchResults.documents.length === 0 && searchResults.tasks.length === 0 && (searchResults.jobOpenings?.length || 0) === 0)) {
         allLeads = await storage.getLeads(companyId);
         allDocuments = await storage.getDocuments(companyId);
         allTasks = await storage.getTasks(companyId);
-        console.log("Got all data for analysis - Leads:", allLeads.length, "Documents:", allDocuments.length, "Tasks:", allTasks.length);
+        allJobOpenings = await storage.getJobOpenings(companyId);
+        console.log("Got all data for analysis - Leads:", allLeads.length, "Documents:", allDocuments.length, "Tasks:", allTasks.length, "Job Openings:", allJobOpenings.length);
       }
       
       // Use AI to analyze and rank the results
@@ -42,6 +44,7 @@ export class AIService {
         ${allLeads.length > 0 ? `All Leads: ${JSON.stringify(allLeads, null, 2)}` : ''}
         ${allDocuments.length > 0 ? `All Documents: ${JSON.stringify(allDocuments, null, 2)}` : ''}
         ${allTasks.length > 0 ? `All Tasks: ${JSON.stringify(allTasks, null, 2)}` : ''}
+        ${allJobOpenings.length > 0 ? `All Job Openings: ${JSON.stringify(allJobOpenings, null, 2)}` : ''}
         
         Guidelines:
         - Be conversational and friendly, not robotic
@@ -63,7 +66,8 @@ export class AIService {
           "relevantResults": {
             "leads": [...],
             "documents": [...],
-            "tasks": [...]
+            "tasks": [...],
+            "jobOpenings": [...]
           },
           "suggestedActions": ["action1", "action2", ...],
           "totalResults": number
@@ -86,7 +90,8 @@ export class AIService {
         rawResults: searchResults,
         allLeadsCount: allLeads.length,
         allDocumentsCount: allDocuments.length,
-        allTasksCount: allTasks.length
+        allTasksCount: allTasks.length,
+        allJobOpeningsCount: allJobOpenings.length
       };
     } catch (error) {
       console.error("Error in AI search:", error);
@@ -97,10 +102,11 @@ export class AIService {
   async chatWithAI(companyId: string, message: string) {
     try {
       // Get recent company data for context
-      const [leads, documents, tasks, activities] = await Promise.all([
+      const [leads, documents, tasks, jobOpenings, activities] = await Promise.all([
         storage.getLeads(companyId).then(results => results.slice(0, 10)),
         storage.getDocuments(companyId).then(results => results.slice(0, 10)),
         storage.getTasks(companyId).then(results => results.slice(0, 10)),
+        storage.getJobOpenings(companyId).then(results => results.slice(0, 10)),
         storage.getActivities(companyId, 10),
       ]);
 
@@ -111,13 +117,14 @@ export class AIService {
         Recent Leads: ${JSON.stringify(leads.map(l => ({ name: l.name, company: l.company, stage: l.stage, value: l.value })))}
         Recent Documents: ${JSON.stringify(documents.map(d => ({ title: d.title, fileType: d.fileType })))}
         Recent Tasks: ${JSON.stringify(tasks.map(t => ({ title: t.title, status: t.status, priority: t.priority })))}
+        Recent Job Openings: ${JSON.stringify(jobOpenings.map(j => ({ title: j.title, department: j.department, status: j.status, location: j.location })))}
         Recent Activities: ${JSON.stringify(activities.map(a => ({ type: a.type, description: a.description })))}
         
         User message: "${message}"
         
         Provide a helpful response based on the available data. Be conversational and actionable.
         If the user is asking for specific data analysis, provide insights based on the context.
-        If they want to perform actions (like creating leads, tasks, etc.), guide them on how to do it.
+        If they want to perform actions (like creating leads, tasks, job openings etc.), guide them on how to do it.
       `;
 
       const response = await openai.chat.completions.create({

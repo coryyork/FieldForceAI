@@ -14,6 +14,7 @@ import AIAssistant from "@/pages/ai-assistant";
 import KnowledgeBase from "@/pages/knowledge-base";
 import AISettings from "@/pages/ai-settings";
 import TasksPage from "@/pages/tasks";
+import Recruitment from "@/pages/recruitment";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -37,6 +38,7 @@ function Router() {
           <Route path="/knowledge-base" component={KnowledgeBase} />
           <Route path="/ai-settings" component={AISettings} />
           <Route path="/tasks" component={TasksPage} />
+          <Route path="/recruitment" component={Recruitment} />
         </>
       )}
       <Route component={NotFound} />

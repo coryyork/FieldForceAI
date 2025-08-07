@@ -124,7 +124,7 @@ function connectToOpenAI(session: VoiceSession, messageQueue: any[]) {
             {
               type: 'function',
               name: 'search_knowledge_base',
-              description: 'Search through the business knowledge base including leads, documents, tasks, and activities. Use this whenever the user asks about their business data, recent activities, or needs information from their documents.',
+              description: 'Search through the business knowledge base including leads, documents, tasks, job openings, and activities. Use this whenever the user asks about their business data, recent activities, recruitment information, or needs information from their documents.',
               parameters: {
                 type: 'object',
                 properties: {
@@ -142,12 +142,14 @@ function connectToOpenAI(session: VoiceSession, messageQueue: any[]) {
             - CRM leads and customer information
             - Documents and knowledge base articles
             - Tasks and project management data
+            - Job openings and recruitment information
             - Recent business activities
             
             Always use the search_knowledge_base function when the user asks about:
             - Their leads, customers, or sales pipeline
             - Documents or information in their knowledge base
             - Tasks, projects, or to-do items
+            - Job openings, recruitment, or hiring information
             - Recent activities or business updates
             - Any specific business data or metrics
             
@@ -243,7 +245,7 @@ function connectToOpenAI(session: VoiceSession, messageQueue: any[]) {
               
               // Add relevant results
               if (analysis.relevantResults) {
-                const { leads, documents, tasks } = analysis.relevantResults;
+                const { leads, documents, tasks, jobOpenings } = analysis.relevantResults;
                 
                 if (leads && leads.length > 0) {
                   responseText += `I found ${leads.length} relevant lead${leads.length > 1 ? 's' : ''}. `;
@@ -263,6 +265,13 @@ function connectToOpenAI(session: VoiceSession, messageQueue: any[]) {
                   responseText += `I found ${tasks.length} relevant task${tasks.length > 1 ? 's' : ''}. `;
                   tasks.slice(0, 3).forEach((task: any) => {
                     responseText += `${task.title} with ${task.priority} priority, status: ${task.status}. `;
+                  });
+                }
+                
+                if (jobOpenings && jobOpenings.length > 0) {
+                  responseText += `I found ${jobOpenings.length} job opening${jobOpenings.length > 1 ? 's' : ''}. `;
+                  jobOpenings.slice(0, 3).forEach((job: any) => {
+                    responseText += `${job.title} ${job.department ? `in ${job.department}` : ''} ${job.location ? `at ${job.location}` : ''}, status: ${job.status}. `;
                   });
                 }
               }

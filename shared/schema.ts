@@ -141,6 +141,7 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   tasks: many(tasks),
   activities: many(activities),
   aiSettings: many(aiSettings),
+  jobOpenings: many(jobOpenings),
 }));
 
 export const leadsRelations = relations(leads, ({ one, many }) => ({
@@ -256,12 +257,44 @@ export const aiSettings = pgTable("ai_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Job openings table for recruitment management
+export const jobOpenings = pgTable("job_openings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  department: varchar("department"),
+  location: varchar("location"),
+  employmentType: varchar("employment_type").notNull().default("full_time"), // full_time, part_time, contract, internship
+  experienceLevel: varchar("experience_level").default("mid_level"), // entry_level, mid_level, senior_level, executive
+  salaryMin: decimal("salary_min", { precision: 12, scale: 2 }),
+  salaryMax: decimal("salary_max", { precision: 12, scale: 2 }),
+  requirements: text("requirements").array(),
+  benefits: text("benefits").array(),
+  status: varchar("status").notNull().default("active"), // active, paused, closed, draft
+  applicationDeadline: timestamp("application_deadline"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 
 
 export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
   company: one(companies, {
     fields: [aiSettings.companyId],
     references: [companies.id],
+  }),
+}));
+
+export const jobOpeningsRelations = relations(jobOpenings, ({ one }) => ({
+  company: one(companies, {
+    fields: [jobOpenings.companyId],
+    references: [companies.id],
+  }),
+  createdByUser: one(users, {
+    fields: [jobOpenings.createdBy],
+    references: [users.id],
   }),
 }));
 
@@ -307,5 +340,13 @@ export const insertAISettingsSchema = createInsertSchema(aiSettings).omit({
   updatedAt: true,
 });
 
+export const insertJobOpeningSchema = createInsertSchema(jobOpenings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type AISettings = typeof aiSettings.$inferSelect;
 export type InsertAISettings = z.infer<typeof insertAISettingsSchema>;
+export type JobOpening = typeof jobOpenings.$inferSelect;
+export type InsertJobOpening = z.infer<typeof insertJobOpeningSchema>;

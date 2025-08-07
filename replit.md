@@ -6,6 +6,11 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 
 ## Recent Changes (August 2025)
 
+- **Recruitment Management**: Complete job opening management system with CRUD operations
+- **Job Opening Features**: Title, description, department, location, employment type, experience level, salary range, requirements, benefits, status, and application deadlines
+- **Recruitment Dashboard**: Overview statistics, job opening cards with detailed information, and bulk management capabilities
+- **AI-Powered Recruitment**: Voice and text AI assistants can search and provide insights about job openings
+- **Recruitment API**: Full RESTful API endpoints for job opening management with proper validation
 - **Voice Conversations**: Successfully integrated OpenAI Realtime API with full bidirectional audio streaming
 - **AI Settings Page**: Customizable AI assistant with name, personality, response style, and voice selection
 - **Voice Options**: Support for all 6 OpenAI voices (Alloy, Echo, Fable, Onyx, Nova, Shimmer)
@@ -59,6 +64,7 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 - **Leads**: CRM functionality with stage tracking and value management
 - **Documents**: Knowledge base with content search and tagging capabilities
 - **Tasks**: Project management with priority and status tracking
+- **Job Openings**: Recruitment management with requirements, benefits, salary ranges, and application tracking
 - **Activities**: Audit trail for business actions and user interactions
 
 ### Authentication and Authorization
@@ -70,7 +76,7 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 ### AI Integration
 - **Provider**: OpenAI GPT-4o for natural language processing and business intelligence
 - **Voice Conversations**: OpenAI Realtime API for voice input/output with selectable voices
-- **Functionality**: Unified search across CRM data, documents, and tasks with contextual analysis
+- **Functionality**: Unified search across CRM data, documents, tasks, and job openings with contextual analysis
 - **Architecture**: Dedicated AI service layer that aggregates data from multiple sources before AI processing
 - **WebSocket Integration**: Real-time bidirectional communication for voice conversations
 - **Voice Features**: 6 voice options, adjustable speed (0.25x-4x), mute controls, visual feedback

@@ -7,6 +7,7 @@ import {
   activities,
   leadNotes,
   aiSettings,
+  jobOpenings,
   type User,
   type UpsertUser,
   type Company,
@@ -23,6 +24,8 @@ import {
   type InsertLeadNote,
   type AISettings,
   type InsertAISettings,
+  type JobOpening,
+  type InsertJobOpening,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -75,11 +78,19 @@ export interface IStorage {
   getAISettings(companyId: string): Promise<AISettings | undefined>;
   upsertAISettings(companyId: string, settings: Partial<InsertAISettings>): Promise<AISettings>;
   
+  // Job Opening operations
+  getJobOpenings(companyId: string): Promise<JobOpening[]>;
+  getJobOpening(id: string, companyId: string): Promise<JobOpening | undefined>;
+  createJobOpening(jobOpening: InsertJobOpening): Promise<JobOpening>;
+  updateJobOpening(id: string, companyId: string, updates: Partial<InsertJobOpening>): Promise<JobOpening>;
+  deleteJobOpening(id: string, companyId: string): Promise<void>;
+  
   // Search operations
   searchAll(companyId: string, query: string): Promise<{
     leads: Lead[];
     documents: Document[];
     tasks: Task[];
+    jobOpenings: JobOpening[];
   }>;
 }
 
@@ -411,13 +422,62 @@ export class DatabaseStorage implements IStorage {
     return settings;
   }
 
+  // Job Opening operations
+  async getJobOpenings(companyId: string): Promise<JobOpening[]> {
+    return await db
+      .select()
+      .from(jobOpenings)
+      .where(eq(jobOpenings.companyId, companyId))
+      .orderBy(desc(jobOpenings.createdAt));
+  }
+
+  async getJobOpening(id: string, companyId: string): Promise<JobOpening | undefined> {
+    const [jobOpening] = await db
+      .select()
+      .from(jobOpenings)
+      .where(and(eq(jobOpenings.id, id), eq(jobOpenings.companyId, companyId)));
+    return jobOpening;
+  }
+
+  async createJobOpening(jobOpening: InsertJobOpening): Promise<JobOpening> {
+    const [newJobOpening] = await db
+      .insert(jobOpenings)
+      .values(jobOpening)
+      .returning();
+    return newJobOpening;
+  }
+
+  async updateJobOpening(id: string, companyId: string, updates: Partial<InsertJobOpening>): Promise<JobOpening> {
+    const [updatedJobOpening] = await db
+      .update(jobOpenings)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(jobOpenings.id, id), eq(jobOpenings.companyId, companyId)))
+      .returning();
+    
+    if (!updatedJobOpening) {
+      throw new Error("Job opening not found or access denied");
+    }
+    
+    return updatedJobOpening;
+  }
+
+  async deleteJobOpening(id: string, companyId: string): Promise<void> {
+    await db
+      .delete(jobOpenings)
+      .where(and(eq(jobOpenings.id, id), eq(jobOpenings.companyId, companyId)));
+  }
+
   // Search operations
   async searchAll(companyId: string, query: string): Promise<{
     leads: Lead[];
     documents: Document[];
     tasks: Task[];
+    jobOpenings: JobOpening[];
   }> {
-    const [searchedLeads, searchedDocuments, searchedTasks] = await Promise.all([
+    const [searchedLeads, searchedDocuments, searchedTasks, searchedJobOpenings] = await Promise.all([
       db
         .select()
         .from(leads)
@@ -443,12 +503,25 @@ export class DatabaseStorage implements IStorage {
         )
         .orderBy(desc(tasks.updatedAt))
         .limit(10),
+        
+      db
+        .select()
+        .from(jobOpenings)
+        .where(
+          and(
+            eq(jobOpenings.companyId, companyId),
+            sql`(title ILIKE ${`%${query}%`} OR description ILIKE ${`%${query}%`} OR department ILIKE ${`%${query}%`} OR location ILIKE ${`%${query}%`})`
+          )
+        )
+        .orderBy(desc(jobOpenings.updatedAt))
+        .limit(10),
     ]);
 
     return {
       leads: searchedLeads,
       documents: searchedDocuments,
       tasks: searchedTasks,
+      jobOpenings: searchedJobOpenings,
     };
   }
 }
