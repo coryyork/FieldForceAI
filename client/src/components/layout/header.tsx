@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Bell, HelpCircle, Menu, Search } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import Sidebar from "./sidebar";
 import HeaderQuickActions from "./header-quick-actions";
 import type { Company } from "@shared/schema";
@@ -70,7 +69,6 @@ export default function Header() {
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
             <HeaderQuickActions />
-            <ThemeToggle />
             <Button variant="ghost" size="sm" className="p-3 rounded-xl touch-target">
               <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </Button>
