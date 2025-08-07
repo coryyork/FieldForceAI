@@ -35,9 +35,6 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  passwordHash: varchar("password_hash"),
-  googleId: varchar("google_id"),
-  githubId: varchar("github_id"),
   companyId: uuid("company_id").references(() => companies.id),
   role: varchar("role").default("user"), // user, admin, owner
   createdAt: timestamp("created_at").defaultNow(),

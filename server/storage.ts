@@ -39,9 +39,6 @@ export interface IStorage {
   // (IMPORTANT) these user operations are mandatory for Replit Auth.
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(userData: Partial<User>): Promise<User>;
-  updateUser(id: string, updates: Partial<User>): Promise<User>;
   
   // Company operations
   getCompany(id: string): Promise<Company | undefined>;
@@ -128,42 +125,6 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date(),
         },
       })
-      .returning();
-    return user;
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
-  }
-
-  async createUser(userData: Partial<User>): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values({
-        id: userData.id || sql`gen_random_uuid()`,
-        email: userData.email!,
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        profileImageUrl: userData.profileImageUrl,
-        passwordHash: userData.passwordHash,
-        googleId: userData.googleId,
-        githubId: userData.githubId,
-        companyId: userData.companyId,
-        role: userData.role || 'user',
-      })
-      .returning();
-    return user;
-  }
-
-  async updateUser(id: string, updates: Partial<User>): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({
-        ...updates,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, id))
       .returning();
     return user;
   }
