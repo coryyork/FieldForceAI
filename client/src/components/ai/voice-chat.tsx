@@ -110,7 +110,9 @@ export default function VoiceChat({
                   type: "server_vad",
                   threshold: 0.5,
                   prefix_padding_ms: 300,
-                  silence_duration_ms: 300  // Reduced from 1200ms for much faster response
+                  silence_duration_ms: 500,  // Balanced for natural conversation
+                  create_response: true,
+                  interrupt_response: true  // Allow interrupting AI when user starts speaking
                 },
                 modalities: ["text", "audio"]
               }
@@ -137,6 +139,10 @@ export default function VoiceChat({
           if (data.type === "audio") {
             // Play received audio
             await playAudioChunk(data.audio);
+          } else if (data.type === "speech_started") {
+            // User started speaking - immediately stop all playing audio
+            console.log("User started speaking - stopping AI audio");
+            stopAllAudio();
           } else if (data.type === "transcript") {
             // Only process user transcripts, not AI responses
             if (data.role === "user") {
@@ -288,6 +294,20 @@ export default function VoiceChat({
   // Track playing audio sources to prevent overlap
   const audioSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const nextPlayTimeRef = useRef<number>(0);
+  
+  // Stop all playing audio immediately (for interruptions)
+  const stopAllAudio = () => {
+    console.log(`Stopping ${audioSourcesRef.current.size} audio sources`);
+    audioSourcesRef.current.forEach(source => {
+      try {
+        source.stop();
+      } catch (e) {
+        // Source may have already stopped
+      }
+    });
+    audioSourcesRef.current.clear();
+    nextPlayTimeRef.current = 0;
+  };
   
   // Play received audio chunks with queueing to prevent overlap
   const playAudioChunk = async (base64Audio: string) => {

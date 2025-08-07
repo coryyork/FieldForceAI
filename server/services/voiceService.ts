@@ -144,6 +144,10 @@ function connectToOpenAI(session: VoiceSession, messageQueue: any[]) {
           console.log('OpenAI session updated successfully');
         } else if (parsedMessage.type === 'input_audio_buffer.speech_started') {
           console.log('Speech detected by OpenAI');
+          // Notify client that user started speaking (to stop AI audio)
+          session.clientWs.send(JSON.stringify({
+            type: 'speech_started'
+          }));
         } else if (parsedMessage.type === 'input_audio_buffer.speech_stopped') {
           console.log('Speech stopped, OpenAI processing...');
         } else if (parsedMessage.type === 'input_audio_buffer.committed') {
