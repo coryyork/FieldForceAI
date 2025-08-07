@@ -21,7 +21,7 @@ import {
   type InsertActivity,
   type LeadNote,
   type InsertLeadNote,
-  type SelectAISettings,
+  type AISettings,
   type InsertAISettings,
 } from "@shared/schema";
 import { db } from "./db";
@@ -72,8 +72,8 @@ export interface IStorage {
   createActivity(activity: InsertActivity): Promise<Activity>;
   
   // AI Settings operations
-  getAISettings(companyId: string): Promise<SelectAISettings | undefined>;
-  upsertAISettings(companyId: string, settings: Partial<InsertAISettings>): Promise<SelectAISettings>;
+  getAISettings(companyId: string): Promise<AISettings | undefined>;
+  upsertAISettings(companyId: string, settings: Partial<InsertAISettings>): Promise<AISettings>;
   
   // Search operations
   searchAll(companyId: string, query: string): Promise<{
@@ -385,7 +385,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // AI Settings operations
-  async getAISettings(companyId: string): Promise<SelectAISettings | undefined> {
+  async getAISettings(companyId: string): Promise<AISettings | undefined> {
     const [settings] = await db
       .select()
       .from(aiSettings)
@@ -393,7 +393,7 @@ export class DatabaseStorage implements IStorage {
     return settings;
   }
 
-  async upsertAISettings(companyId: string, settingsData: Partial<InsertAISettings>): Promise<SelectAISettings> {
+  async upsertAISettings(companyId: string, settingsData: Partial<InsertAISettings>): Promise<AISettings> {
     const [settings] = await db
       .insert(aiSettings)
       .values({

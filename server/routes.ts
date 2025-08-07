@@ -656,17 +656,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const settingsData = {
-        companyId: user.companyId,
         aiName: req.body.aiName,
-        personalityDescription: req.body.personalityDescription,
-        responseStyle: req.body.responseStyle,
+        personalityKeywords: req.body.personalityKeywords,
         autoSuggestions: req.body.autoSuggestions,
         voiceEnabled: req.body.voiceEnabled,
         voiceId: req.body.voiceId,
         voiceSpeed: req.body.voiceSpeed,
       };
 
-      const settings = await storage.upsertAISettings(settingsData);
+      const settings = await storage.upsertAISettings(user.companyId, settingsData);
       res.json(settings);
     } catch (error) {
       console.error("Error saving AI settings:", error);
