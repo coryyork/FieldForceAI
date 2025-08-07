@@ -193,11 +193,11 @@ export default function VoiceChat({
         
         // Log every 50 frames to see if processing is happening
         if (processedFrameCount % 50 === 1) {
-          console.log(`Audio processing active! Frame count: ${processedFrameCount}, ws ready: ${ws.readyState === WebSocket.OPEN}, isListening: ${isListening}`);
+          console.log(`Audio processing active! Frame count: ${processedFrameCount}, ws ready: ${ws.readyState === WebSocket.OPEN}, isListening: ${isListening}, isConnected: ${isConnected}`);
         }
         
-        // Remove muted check - we should always send audio to OpenAI for processing
-        if (isListening && ws.readyState === WebSocket.OPEN) {
+        // Send audio if WebSocket is ready, regardless of isListening state
+        if (ws.readyState === WebSocket.OPEN && isConnected) {
           const inputData = e.inputBuffer.getChannelData(0);
           
           // Check if there's actual audio content
@@ -213,7 +213,7 @@ export default function VoiceChat({
           
           // Always log first few audio detections
           if (hasAudio && Math.random() < 0.2) {
-            console.log("Audio detected! Amplitude:", amplitude.toFixed(4));
+            console.log("Audio detected! Amplitude:", amplitude.toFixed(4), "Sending to server...");
           }
           
           if (hasAudio) {
