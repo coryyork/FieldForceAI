@@ -15,6 +15,9 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 - **Multi-tenant Architecture**: Complete company workspace system with automatic onboarding flow
 - **Dynamic Branding**: Header displays "My [Organization Name]" based on user's company
 - **Company Onboarding**: New users automatically guided through organization setup process
+- **Authentication Fixes**: Resolved cookie security settings for development environment
+- **Database Schema**: Fixed personality_keywords column and AI settings storage
+- **Voice Debug Status**: Voice WebSocket connects to OpenAI but sessions disconnect quickly - investigating audio processing and session persistence
 
 ## User Preferences
 

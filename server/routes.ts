@@ -695,8 +695,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Import voice service dynamically to avoid circular dependency
     const { handleVoiceWebSocket } = await import('./services/voiceService');
     
-    // Get user ID from the session (simplified for now)
-    const userId = 'temp-user-id';
+    // Extract userId from session - need proper session handling
+    // For now we'll use a temporary approach, but this should extract from authenticated session
+    const userId = `temp-user-id-${Date.now()}`;
     const companyId = 'temp-company-id';
     
     handleVoiceWebSocket(ws, request, userId, companyId);

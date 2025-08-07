@@ -61,8 +61,9 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
       // Create a processor for handling audio chunks
       processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
       
-      // Connect to backend WebSocket endpoint
-      const ws = new WebSocket(`wss://${window.location.host}/api/voice/connect`);
+      // Connect to backend WebSocket endpoint  
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${wsProtocol}//${window.location.host}/api/voice/connect`);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -140,6 +141,10 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
         setIsListening(false);
       };
 
+      let audioBuffer: Float32Array[] = [];
+      let silenceCounter = 0;
+      const maxSilenceFrames = 50; // ~1 second of silence before committing
+      
       // Process and send audio chunks
       processorRef.current.onaudioprocess = (e) => {
         if (!isMuted && isListening && ws.readyState === WebSocket.OPEN) {
@@ -147,14 +152,20 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
           
           // Check if there's actual audio content
           let hasAudio = false;
+          let amplitude = 0;
           for (let i = 0; i < inputData.length; i++) {
-            if (Math.abs(inputData[i]) > 0.01) {
+            const sample = Math.abs(inputData[i]);
+            amplitude = Math.max(amplitude, sample);
+            if (sample > 0.01) {
               hasAudio = true;
-              break;
             }
           }
           
           if (hasAudio) {
+            silenceCounter = 0;
+            audioBuffer.push(new Float32Array(inputData));
+            
+            // Send audio chunk immediately
             const pcm16 = convertFloat32ToPCM16(inputData);
             const uint8Array = new Uint8Array(pcm16.buffer);
             let binaryString = '';
@@ -169,6 +180,22 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
               }));
             } catch (error) {
               console.error("Error sending audio:", error);
+            }
+          } else {
+            silenceCounter++;
+            
+            // If we have audio in buffer and silence detected, commit the audio
+            if (audioBuffer.length > 0 && silenceCounter > maxSilenceFrames) {
+              try {
+                ws.send(JSON.stringify({
+                  type: "input_audio_buffer.commit"
+                }));
+                console.log("Audio committed after silence detected");
+              } catch (error) {
+                console.error("Error committing audio:", error);
+              }
+              audioBuffer = [];
+              silenceCounter = 0;
             }
           }
         }
