@@ -50,10 +50,16 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
 
       // Initialize audio context for processing
       audioContextRef.current = new AudioContext({ sampleRate: 24000 });
+      
+      // Resume audio context if suspended
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+      
       const source = audioContextRef.current.createMediaStreamSource(stream);
       
       // Create a processor for handling audio chunks
-      processorRef.current = audioContextRef.current.createScriptProcessor(2048, 1, 1);
+      processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
       
       // Connect to backend WebSocket endpoint
       const ws = new WebSocket(`wss://${window.location.host}/api/voice/connect`);
@@ -70,7 +76,7 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
           type: "session.update",
           session: {
             voice: aiSettings?.voiceId || "alloy",
-            instructions: aiSettings?.personalityDescription || "You are a helpful AI assistant.",
+            instructions: aiSettings?.personalityDescription || "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions.",
             input_audio_format: "pcm16",
             output_audio_format: "pcm16",
             input_audio_transcription: { model: "whisper-1" },
@@ -78,28 +84,39 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
               type: "server_vad",
               threshold: 0.5,
               prefix_padding_ms: 300,
-              silence_duration_ms: 500
-            }
+              silence_duration_ms: 800
+            },
+            modalities: ["text", "audio"]
           }
         }));
       };
 
       ws.onmessage = async (event) => {
-        const data = JSON.parse(event.data);
-        
-        if (data.type === "audio") {
-          // Play received audio
-          playAudioChunk(data.audio);
-        } else if (data.type === "transcript") {
-          // Handle transcription updates
-          console.log("Transcript:", data.text);
-        } else if (data.type === "error") {
-          console.error("Voice API error:", data.error);
-          toast({
-            title: "Voice Error",
-            description: data.error,
-            variant: "destructive",
-          });
+        try {
+          const data = JSON.parse(event.data);
+          console.log("Received message type:", data.type);
+          
+          if (data.type === "audio") {
+            // Play received audio
+            await playAudioChunk(data.audio);
+          } else if (data.type === "transcript") {
+            // Handle transcription updates
+            console.log("Transcript:", data.text);
+          } else if (data.type === "transcript_delta") {
+            // Handle partial transcriptions
+            console.log("Transcript delta:", data.text);
+          } else if (data.type === "error") {
+            console.error("Voice API error:", data.error);
+            toast({
+              title: "Voice Error",
+              description: data.error,
+              variant: "destructive",
+            });
+          } else if (data.type === "connection") {
+            console.log("Connection status:", data.status);
+          }
+        } catch (error) {
+          console.error("Error parsing message:", error);
         }
       };
 
@@ -120,18 +137,33 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
       processorRef.current.onaudioprocess = (e) => {
         if (!isMuted && isListening && ws.readyState === WebSocket.OPEN) {
           const inputData = e.inputBuffer.getChannelData(0);
-          const pcm16 = convertFloat32ToPCM16(inputData);
           
-          const uint8Array = new Uint8Array(pcm16.buffer);
-          let binaryString = '';
-          for (let i = 0; i < uint8Array.length; i++) {
-            binaryString += String.fromCharCode(uint8Array[i]);
+          // Check if there's actual audio content
+          let hasAudio = false;
+          for (let i = 0; i < inputData.length; i++) {
+            if (Math.abs(inputData[i]) > 0.01) {
+              hasAudio = true;
+              break;
+            }
           }
           
-          ws.send(JSON.stringify({
-            type: "input_audio_buffer.append",
-            audio: btoa(binaryString)
-          }));
+          if (hasAudio) {
+            const pcm16 = convertFloat32ToPCM16(inputData);
+            const uint8Array = new Uint8Array(pcm16.buffer);
+            let binaryString = '';
+            for (let i = 0; i < uint8Array.length; i++) {
+              binaryString += String.fromCharCode(uint8Array[i]);
+            }
+            
+            try {
+              ws.send(JSON.stringify({
+                type: "input_audio_buffer.append",
+                audio: btoa(binaryString)
+              }));
+            } catch (error) {
+              console.error("Error sending audio:", error);
+            }
+          }
         }
       };
 
@@ -315,9 +347,16 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
         {/* Instructions */}
         <div className="text-xs text-center text-gray-500 dark:text-gray-400">
           {!isConnected && "Voice conversations require microphone access"}
-          {isConnected && !isMuted && "Speak naturally - the AI will respond when you pause"}
+          {isConnected && !isMuted && "Speak clearly - the AI will respond when you pause"}
           {isConnected && isMuted && "Your microphone is muted"}
         </div>
+        
+        {/* Debug Info */}
+        {isConnected && (
+          <div className="text-xs text-center text-gray-400">
+            Connection: {connectionStatus} | Audio Context: {audioContextRef.current?.state}
+          </div>
+        )}
       </Card>
     </div>
   );
