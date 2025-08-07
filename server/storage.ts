@@ -6,6 +6,7 @@ import {
   tasks,
   activities,
   leadNotes,
+  aiSettings,
   type User,
   type UpsertUser,
   type Company,
@@ -20,6 +21,8 @@ import {
   type InsertActivity,
   type LeadNote,
   type InsertLeadNote,
+  type SelectAISettings,
+  type InsertAISettings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -67,6 +70,10 @@ export interface IStorage {
   updateLeadNote(id: string, companyId: string, updates: any): Promise<any>;
   deleteLeadNote(id: string, companyId: string): Promise<void>;
   createActivity(activity: InsertActivity): Promise<Activity>;
+  
+  // AI Settings operations
+  getAISettings(companyId: string): Promise<SelectAISettings | undefined>;
+  upsertAISettings(companyId: string, settings: InsertAISettings): Promise<SelectAISettings>;
   
   // Search operations
   searchAll(companyId: string, query: string): Promise<{
@@ -375,6 +382,33 @@ export class DatabaseStorage implements IStorage {
       .values(activity)
       .returning();
     return newActivity;
+  }
+
+  // AI Settings operations
+  async getAISettings(companyId: string): Promise<SelectAISettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(aiSettings)
+      .where(eq(aiSettings.companyId, companyId));
+    return settings;
+  }
+
+  async upsertAISettings(companyId: string, settingsData: InsertAISettings): Promise<SelectAISettings> {
+    const [settings] = await db
+      .insert(aiSettings)
+      .values({
+        ...settingsData,
+        companyId,
+      })
+      .onConflictDoUpdate({
+        target: aiSettings.companyId,
+        set: {
+          ...settingsData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return settings;
   }
 
   // Search operations

@@ -140,6 +140,7 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   documents: many(documents),
   tasks: many(tasks),
   activities: many(activities),
+  aiSettings: many(aiSettings),
 }));
 
 export const leadsRelations = relations(leads, ({ one, many }) => ({
@@ -276,3 +277,32 @@ export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
+
+// AI Settings table
+export const aiSettings = pgTable("ai_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  aiName: varchar("ai_name").notNull().default("AI Assistant"),
+  personalityDescription: text("personality_description"),
+  responseStyle: varchar("response_style").notNull().default("professional"),
+  autoSuggestions: boolean("auto_suggestions").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
+  company: one(companies, {
+    fields: [aiSettings.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const insertAISettingsSchema = createInsertSchema(aiSettings).omit({
+  id: true,
+  companyId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type SelectAISettings = typeof aiSettings.$inferSelect;
+export type InsertAISettings = z.infer<typeof insertAISettingsSchema>;

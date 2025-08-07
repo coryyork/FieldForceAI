@@ -12,6 +12,7 @@ import CRM from "@/pages/crm";
 import LeadDetails from "@/pages/lead-details";
 import AIAssistant from "@/pages/ai-assistant";
 import KnowledgeBase from "@/pages/knowledge-base";
+import AISettings from "@/pages/ai-settings";
 import TasksPage from "@/pages/tasks";
 import NotFound from "@/pages/not-found";
 
@@ -34,6 +35,7 @@ function Router() {
           <Route path="/sales/lead/:id" component={LeadDetails} />
           <Route path="/ai-assistant" component={AIAssistant} />
           <Route path="/knowledge-base" component={KnowledgeBase} />
+          <Route path="/ai-settings" component={AISettings} />
           <Route path="/tasks" component={TasksPage} />
         </>
       )}
