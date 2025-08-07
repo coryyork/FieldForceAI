@@ -33,7 +33,7 @@ export default function Onboarding() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Welcome to Field Force!",
         description: "Your organization workspace has been created successfully.",
