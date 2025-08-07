@@ -14,7 +14,7 @@ import LeadForm from "@/components/crm/lead-form";
 import NotesTimeline from "@/components/crm/notes-timeline";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Edit, Trash2, Mail, Phone, Building, User, DollarSign, TrendingUp, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Mail, Phone, Building, User, DollarSign, TrendingUp, Calendar, MapPin, Globe } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 
 export default function LeadDetails() {
@@ -232,6 +232,19 @@ export default function LeadDetails() {
                             <>
                               <Building className="w-4 h-4 mr-2" />
                               {lead.company}
+                            </>
+                          ) : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Website</label>
+                        <p className="text-gray-900 dark:text-white flex items-center">
+                          {lead.website ? (
+                            <>
+                              <Globe className="w-4 h-4 mr-2" />
+                              <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                {lead.website}
+                              </a>
                             </>
                           ) : "N/A"}
                         </p>

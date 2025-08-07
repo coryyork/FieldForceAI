@@ -24,6 +24,7 @@ const leadFormSchema = insertLeadSchema.omit({ companyId: true }).extend({
   phone: data.phone || "",
   company: data.company || "",
   title: data.title || "",
+  website: data.website || "",
   source: data.source || "",
   notes: data.notes || "",
   street: data.street || "",
@@ -64,6 +65,7 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
       phone: initialData?.phone || "",
       company: initialData?.company || "",
       title: initialData?.title || "",
+      website: initialData?.website || "",
       source: initialData?.source || "",
       stage: initialData?.stage || "new",
       value: initialData?.value?.toString() || "0",
@@ -323,6 +325,20 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
                 <FormLabel>Job Title</FormLabel>
                 <FormControl>
                   <Input placeholder="CEO" {...field} value={field.value || ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="website"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Website</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://example.com" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

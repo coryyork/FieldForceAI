@@ -60,6 +60,7 @@ export const leads = pgTable("leads", {
   phone: varchar("phone"),
   company: varchar("company"),
   title: varchar("title"),
+  website: varchar("website"),
   source: varchar("source"), // website, referral, cold_call, etc.
   stage: varchar("stage").notNull().default("new"), // new, qualified, proposal, negotiation, closed_won, closed_lost
   value: decimal("value", { precision: 12, scale: 2 }),
