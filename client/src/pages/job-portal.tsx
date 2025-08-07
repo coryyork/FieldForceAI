@@ -545,13 +545,17 @@ export default function JobPortal() {
                         <Dialog open={selectedJob?.id === job.id} onOpenChange={(open) => {
                           if (!open) {
                             setSelectedJob(null);
+                            setApplicationStep(1);
                             setApplicationData({
-                              fullName: "",
-                              email: "",
+                              firstName: "",
+                              lastName: "",
+                              address: "",
                               phone: "",
-                              coverLetter: "",
-                              experience: "",
-                              portfolioUrl: ""
+                              email: "",
+                              linkedinUrl: "",
+                              linkedinConnected: false,
+                              videoBlob: null,
+                              videoUrl: "",
                             });
                           }
                         }}>
