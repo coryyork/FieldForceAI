@@ -49,6 +49,7 @@ export async function setupAuth(app: Express) {
       secure: false, // Always false for development
       sameSite: 'lax',
       maxAge: sessionTtl,
+      path: '/', // Ensure cookie works on all paths
     },
   };
 

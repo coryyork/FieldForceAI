@@ -1,6 +1,3 @@
-import { useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import AIFab from "@/components/ai/ai-fab";
@@ -14,37 +11,13 @@ import { useQuery } from "@tanstack/react-query";
 import { DollarSign, Users, Handshake, CheckSquare } from "lucide-react";
 
 export default function Dashboard() {
-  const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
-
-  // Redirect to home if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
   const { data: leads = [] } = useQuery<any[]>({
     queryKey: ["/api/leads"],
-    enabled: isAuthenticated,
   });
 
   const { data: tasks = [] } = useQuery<any[]>({
     queryKey: ["/api/tasks"],
-    enabled: isAuthenticated,
   });
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   // Calculate metrics from real data
   const totalLeads = leads.length;
