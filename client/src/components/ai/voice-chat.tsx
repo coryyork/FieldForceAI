@@ -93,6 +93,10 @@ export default function VoiceChat({
         setConnectionStatus("connected");
         setIsConnected(true);
         setIsListening(true);
+        
+        // Reset audio timing for fresh session
+        nextPlayTimeRef.current = 0;
+        audioSourcesRef.current.clear();
 
         // Wait a moment for connection to stabilize then send session update
         setTimeout(() => {
@@ -348,6 +352,12 @@ export default function VoiceChat({
     if (!audioContextRef.current) return;
 
     try {
+      // Resume audio context if suspended (browser security requirement)
+      if (audioContextRef.current.state === 'suspended') {
+        console.log("Resuming audio context for playback...");
+        await audioContextRef.current.resume();
+      }
+      
       const binaryString = atob(base64Audio);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
@@ -367,14 +377,28 @@ export default function VoiceChat({
 
       const source = audioContextRef.current.createBufferSource();
       source.buffer = audioBuffer;
-      source.connect(audioContextRef.current.destination);
       
-      // Schedule audio to play sequentially
+      // Create gain node for volume control (helps with debugging)
+      const gainNode = audioContextRef.current.createGain();
+      gainNode.gain.value = 1.0;
+      
+      // Connect audio chain: source -> gain -> destination
+      source.connect(gainNode);
+      gainNode.connect(audioContextRef.current.destination);
+      
+      // Schedule audio to play immediately for current chunks
       const currentTime = audioContextRef.current.currentTime;
-      const playTime = Math.max(currentTime, nextPlayTimeRef.current);
+      // Reset timing if it's the first chunk or if timing has drifted too far
+      if (nextPlayTimeRef.current === 0 || nextPlayTimeRef.current < currentTime) {
+        nextPlayTimeRef.current = currentTime + 0.01; // Small buffer to ensure smooth start
+      }
+      const playTime = nextPlayTimeRef.current;
       
+      // Start the audio source
       source.start(playTime);
       nextPlayTimeRef.current = playTime + audioBuffer.duration;
+      
+      console.log(`Audio buffer created: ${float32Array.length} samples, playing at ${playTime.toFixed(3)}s`);
       
       // Track and clean up sources
       audioSourcesRef.current.add(source);
@@ -386,7 +410,7 @@ export default function VoiceChat({
         }
       };
       
-      console.log(`Audio scheduled at ${playTime.toFixed(3)}s, duration: ${audioBuffer.duration.toFixed(3)}s`);
+      console.log(`Audio playing: context state=${audioContextRef.current.state}, scheduled at ${playTime.toFixed(3)}s (current: ${currentTime.toFixed(3)}s), duration: ${audioBuffer.duration.toFixed(3)}s`);
     } catch (error) {
       console.error("Error playing audio:", error);
     }
