@@ -11,7 +11,9 @@ import {
   insertTaskSchema, 
   insertCompanySchema,
   insertJobOpeningSchema,
+  insertJobApplicationSchema,
   jobOpenings,
+  jobApplications,
   companies
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -809,6 +811,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Job Applications routes
+  app.get("/api/job-applications", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const applications = await storage.getJobApplicationsWithJobDetails(user.companyId);
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching job applications:", error);
+      res.status(500).json({ message: "Failed to fetch job applications" });
+    }
+  });
+
+  app.get("/api/job-applications/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const application = await storage.getJobApplication(req.params.id, user.companyId);
+      if (!application) {
+        return res.status(404).json({ message: "Job application not found" });
+      }
+      res.json(application);
+    } catch (error) {
+      console.error("Error fetching job application:", error);
+      res.status(500).json({ message: "Failed to fetch job application" });
+    }
+  });
+
+  app.put("/api/job-applications/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const applicationData = { 
+        status: req.body.status,
+        notes: req.body.notes 
+      };
+
+      const updatedApplication = await storage.updateJobApplication(
+        req.params.id, 
+        user.companyId, 
+        applicationData
+      );
+      
+      // Log activity
+      await storage.createActivity({
+        companyId: user.companyId,
+        userId: req.user.claims.sub,
+        type: "job_application_updated",
+        description: `Updated application from ${updatedApplication.firstName} ${updatedApplication.lastName}`,
+        entityType: "job_application",
+        entityId: updatedApplication.id,
+      });
+
+      res.json(updatedApplication);
+    } catch (error) {
+      console.error("Error updating job application:", error);
+      res.status(500).json({ message: "Failed to update job application" });
+    }
+  });
+
   // Public Job Portal routes (no authentication required)
   app.get("/api/public/job-openings", async (req: any, res) => {
     try {
@@ -844,6 +915,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching public job openings:", error);
       res.status(500).json({ message: "Failed to fetch public job openings" });
+    }
+  });
+
+  // Public job application submission (no authentication required)
+  app.post("/api/public/job-applications", async (req: any, res) => {
+    try {
+      // Get job opening to verify it exists and get company ID
+      const jobOpening = await db
+        .select()
+        .from(jobOpenings)
+        .where(eq(jobOpenings.id, req.body.jobOpeningId))
+        .limit(1);
+
+      if (!jobOpening.length) {
+        return res.status(404).json({ message: "Job opening not found" });
+      }
+
+      const applicationData = insertJobApplicationSchema.parse({
+        ...req.body,
+        companyId: jobOpening[0].companyId,
+      });
+
+      const newApplication = await storage.createJobApplication(applicationData);
+      
+      // Log activity (using system/anonymous user)
+      await storage.createActivity({
+        companyId: jobOpening[0].companyId,
+        userId: 'system',
+        type: "job_application_submitted",
+        description: `New application received from ${newApplication.firstName} ${newApplication.lastName} for ${jobOpening[0].title}`,
+        entityType: "job_application",
+        entityId: newApplication.id,
+      });
+
+      res.json(newApplication);
+    } catch (error) {
+      console.error("Error submitting job application:", error);
+      res.status(500).json({ message: "Failed to submit job application" });
     }
   });
 

@@ -64,6 +64,11 @@ const navigationItems = [
         icon: Briefcase,
       },
       {
+        name: "All Candidates",
+        href: "/candidates",
+        icon: Users,
+      },
+      {
         name: "Job Portal",
         href: "/jobs",
         icon: Building2,

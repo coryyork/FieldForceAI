@@ -8,6 +8,7 @@ import {
   leadNotes,
   aiSettings,
   jobOpenings,
+  jobApplications,
   type User,
   type UpsertUser,
   type Company,
@@ -26,6 +27,8 @@ import {
   type InsertAISettings,
   type JobOpening,
   type InsertJobOpening,
+  type JobApplication,
+  type InsertJobApplication,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -84,6 +87,14 @@ export interface IStorage {
   createJobOpening(jobOpening: InsertJobOpening): Promise<JobOpening>;
   updateJobOpening(id: string, companyId: string, updates: Partial<InsertJobOpening>): Promise<JobOpening>;
   deleteJobOpening(id: string, companyId: string): Promise<void>;
+  
+  // Job Application operations
+  getJobApplications(companyId: string): Promise<JobApplication[]>;
+  getJobApplication(id: string, companyId: string): Promise<JobApplication | undefined>;
+  createJobApplication(application: InsertJobApplication): Promise<JobApplication>;
+  updateJobApplication(id: string, companyId: string, updates: Partial<InsertJobApplication>): Promise<JobApplication>;
+  deleteJobApplication(id: string, companyId: string): Promise<void>;
+  getJobApplicationsWithJobDetails(companyId: string): Promise<any[]>;
   
   // Search operations
   searchAll(companyId: string, query: string): Promise<{
@@ -468,6 +479,79 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(jobOpenings)
       .where(and(eq(jobOpenings.id, id), eq(jobOpenings.companyId, companyId)));
+  }
+
+  // Job Application operations
+  async getJobApplications(companyId: string): Promise<JobApplication[]> {
+    return await db
+      .select()
+      .from(jobApplications)
+      .where(eq(jobApplications.companyId, companyId))
+      .orderBy(desc(jobApplications.createdAt));
+  }
+
+  async getJobApplication(id: string, companyId: string): Promise<JobApplication | undefined> {
+    const [application] = await db
+      .select()
+      .from(jobApplications)
+      .where(and(eq(jobApplications.id, id), eq(jobApplications.companyId, companyId)));
+    return application;
+  }
+
+  async createJobApplication(application: InsertJobApplication): Promise<JobApplication> {
+    const [newApplication] = await db
+      .insert(jobApplications)
+      .values(application)
+      .returning();
+    return newApplication;
+  }
+
+  async updateJobApplication(id: string, companyId: string, updates: Partial<InsertJobApplication>): Promise<JobApplication> {
+    const [updatedApplication] = await db
+      .update(jobApplications)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(jobApplications.id, id), eq(jobApplications.companyId, companyId)))
+      .returning();
+    
+    if (!updatedApplication) {
+      throw new Error("Job application not found or access denied");
+    }
+    
+    return updatedApplication;
+  }
+
+  async deleteJobApplication(id: string, companyId: string): Promise<void> {
+    await db
+      .delete(jobApplications)
+      .where(and(eq(jobApplications.id, id), eq(jobApplications.companyId, companyId)));
+  }
+
+  async getJobApplicationsWithJobDetails(companyId: string): Promise<any[]> {
+    return await db
+      .select({
+        id: jobApplications.id,
+        firstName: jobApplications.firstName,
+        lastName: jobApplications.lastName,
+        email: jobApplications.email,
+        phone: jobApplications.phone,
+        address: jobApplications.address,
+        linkedinUrl: jobApplications.linkedinUrl,
+        videoUrl: jobApplications.videoUrl,
+        status: jobApplications.status,
+        notes: jobApplications.notes,
+        createdAt: jobApplications.createdAt,
+        jobTitle: jobOpenings.title,
+        jobDepartment: jobOpenings.department,
+        jobLocation: jobOpenings.location,
+        jobOpeningId: jobApplications.jobOpeningId,
+      })
+      .from(jobApplications)
+      .innerJoin(jobOpenings, eq(jobApplications.jobOpeningId, jobOpenings.id))
+      .where(eq(jobApplications.companyId, companyId))
+      .orderBy(desc(jobApplications.createdAt));
   }
 
   // Search operations

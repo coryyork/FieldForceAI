@@ -279,7 +279,23 @@ export const jobOpenings = pgTable("job_openings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-
+// Job applications table for candidate submissions
+export const jobApplications = pgTable("job_applications", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobOpeningId: uuid("job_opening_id").notNull().references(() => jobOpenings.id),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  firstName: varchar("first_name").notNull(),
+  lastName: varchar("last_name").notNull(),
+  email: varchar("email").notNull(),
+  phone: varchar("phone").notNull(),
+  address: text("address").notNull(),
+  linkedinUrl: varchar("linkedin_url"),
+  videoUrl: varchar("video_url"), // Stored video file URL or blob reference
+  status: varchar("status").notNull().default("submitted"), // submitted, reviewing, interviewed, hired, rejected
+  notes: text("notes"), // Internal notes from recruiters
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
   company: one(companies, {
@@ -288,7 +304,7 @@ export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
   }),
 }));
 
-export const jobOpeningsRelations = relations(jobOpenings, ({ one }) => ({
+export const jobOpeningsRelations = relations(jobOpenings, ({ one, many }) => ({
   company: one(companies, {
     fields: [jobOpenings.companyId],
     references: [companies.id],
@@ -296,6 +312,18 @@ export const jobOpeningsRelations = relations(jobOpenings, ({ one }) => ({
   createdByUser: one(users, {
     fields: [jobOpenings.createdBy],
     references: [users.id],
+  }),
+  applications: many(jobApplications),
+}));
+
+export const jobApplicationsRelations = relations(jobApplications, ({ one }) => ({
+  jobOpening: one(jobOpenings, {
+    fields: [jobApplications.jobOpeningId],
+    references: [jobOpenings.id],
+  }),
+  company: one(companies, {
+    fields: [jobApplications.companyId],
+    references: [companies.id],
   }),
 }));
 
@@ -347,7 +375,15 @@ export const insertJobOpeningSchema = createInsertSchema(jobOpenings).omit({
   updatedAt: true,
 });
 
+export const insertJobApplicationSchema = createInsertSchema(jobApplications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type AISettings = typeof aiSettings.$inferSelect;
 export type InsertAISettings = z.infer<typeof insertAISettingsSchema>;
 export type JobOpening = typeof jobOpenings.$inferSelect;
 export type InsertJobOpening = z.infer<typeof insertJobOpeningSchema>;
+export type JobApplication = typeof jobApplications.$inferSelect;
+export type InsertJobApplication = z.infer<typeof insertJobApplicationSchema>;
