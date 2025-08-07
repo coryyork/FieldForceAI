@@ -121,10 +121,12 @@ export default function VoiceChat({
             const keepAlive = setInterval(() => {
               if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: 'ping' }));
+                console.log("Sending keep-alive ping");
               } else {
+                console.log("WebSocket not ready, clearing keep-alive");
                 clearInterval(keepAlive);
               }
-            }, 30000); // ping every 30 seconds
+            }, 10000); // ping every 10 seconds
           }
         }, 100);
       };
@@ -183,6 +185,11 @@ export default function VoiceChat({
       
       // Process and send audio chunks
       processorRef.current.onaudioprocess = (e) => {
+        // Always log processing attempts for debugging
+        if (Math.random() < 0.05) { // 5% chance to avoid spam
+          console.log("Processing audio frame, ws ready:", ws.readyState === WebSocket.OPEN, "isListening:", isListening);
+        }
+        
         // Remove muted check - we should always send audio to OpenAI for processing
         if (isListening && ws.readyState === WebSocket.OPEN) {
           const inputData = e.inputBuffer.getChannelData(0);
@@ -193,9 +200,14 @@ export default function VoiceChat({
           for (let i = 0; i < inputData.length; i++) {
             const sample = Math.abs(inputData[i]);
             amplitude = Math.max(amplitude, sample);
-            if (sample > 0.01) {
+            if (sample > 0.005) { // Lower threshold to detect quieter audio
               hasAudio = true;
             }
+          }
+          
+          // Always log first few audio detections
+          if (hasAudio && Math.random() < 0.2) {
+            console.log("Audio detected! Amplitude:", amplitude.toFixed(4));
           }
           
           if (hasAudio) {
@@ -215,8 +227,10 @@ export default function VoiceChat({
                 type: "input_audio_buffer.append",
                 audio: btoa(binaryString)
               }));
-              // Log audio sending for debugging
-              console.log("Sending audio chunk, amplitude:", amplitude.toFixed(3), "size:", uint8Array.length);
+              // Log audio sending occasionally to avoid spam
+              if (Math.random() < 0.1) {
+                console.log("Sending audio chunk, amplitude:", amplitude.toFixed(3), "size:", uint8Array.length);
+              }
             } catch (error) {
               console.error("Error sending audio:", error);
             }
@@ -244,6 +258,7 @@ export default function VoiceChat({
       processorRef.current.connect(audioContextRef.current.destination);
       
       console.log("Audio processing connected successfully");
+      console.log("Audio stream tracks:", stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
 
     } catch (error) {
       console.error("Failed to connect to voice API:", error);
