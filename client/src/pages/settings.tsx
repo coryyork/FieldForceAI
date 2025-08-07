@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, Brain, User, Shield, Bell } from "lucide-react";
+import { Settings as SettingsIcon, Brain, User, Shield, Bell } from "lucide-react";
 import { Link } from "wouter";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
@@ -94,13 +94,13 @@ export default function Settings() {
                     <CardContent className="pt-0">
                       {category.disabled ? (
                         <Button variant="outline" disabled className="w-full">
-                          <Settings className="w-4 h-4 mr-2" />
+                          <SettingsIcon className="w-4 h-4 mr-2" />
                           Configure
                         </Button>
                       ) : (
                         <Link href={category.href}>
                           <Button variant="outline" className="w-full">
-                            <Settings className="w-4 h-4 mr-2" />
+                            <SettingsIcon className="w-4 h-4 mr-2" />
                             Configure
                           </Button>
                         </Link>
