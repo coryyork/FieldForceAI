@@ -145,10 +145,10 @@ export default function AIFab() {
       {/* AI Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent 
-          className="sm:max-w-[400px] h-[600px] flex flex-col shadow-2xl border-2 border-electric-blue/10 z-50"
+          className="sm:max-w-[420px] h-[580px] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-700 z-50 rounded-xl"
           style={{
             position: 'fixed',
-            bottom: '80px',
+            bottom: '90px',
             right: '20px',
             top: 'auto',
             left: 'auto',
@@ -157,19 +157,19 @@ export default function AIFab() {
             zIndex: 9999
           }}
         >
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
+          <DialogHeader className="pb-4 border-b border-gray-100 dark:border-gray-800">
+            <DialogTitle className="flex items-center justify-between text-base font-semibold">
               <div className="flex items-center">
                 <Bot className="w-5 h-5 mr-2 text-electric-blue" />
                 AI Assistant
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1">
                 {messages.length > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={clearChat}
-                    className="h-6 w-6 p-0 text-gray-500"
+                    className="h-8 px-2 text-xs text-gray-500 hover:text-gray-700"
                   >
                     Clear
                   </Button>
@@ -178,7 +178,7 @@ export default function AIFab() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsOpen(false)}
-                  className="h-6 w-6 p-0"
+                  className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -186,7 +186,7 @@ export default function AIFab() {
             </DialogTitle>
           </DialogHeader>
           
-          <div className="flex-1 flex flex-col space-y-4">
+          <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
             {/* Chat Messages */}
             {messages.length > 0 ? (
               <ScrollArea className="flex-1 pr-4">
@@ -196,7 +196,7 @@ export default function AIFab() {
                       key={message.id}
                       className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`flex max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start space-x-2`}>
+                      <div className={`flex max-w-[85%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start gap-2`}>
                         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                           message.type === 'user' 
                             ? 'bg-electric-blue text-white' 
@@ -208,15 +208,15 @@ export default function AIFab() {
                             <Bot className="w-4 h-4 text-electric-blue" />
                           )}
                         </div>
-                        <div className={`rounded-lg p-3 shadow-sm ${
+                        <div className={`rounded-2xl p-3 shadow-sm ${
                           message.type === 'user'
-                            ? 'bg-electric-blue text-white ml-2'
-                            : 'bg-white dark:bg-gray-800 mr-2 border border-gray-200 dark:border-gray-700'
+                            ? 'bg-electric-blue text-white'
+                            : 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
                         }`}>
                           <div className="text-sm whitespace-pre-line leading-relaxed">
                             {message.content}
                           </div>
-                          <div className={`text-xs mt-1 opacity-70 ${
+                          <div className={`text-xs mt-2 opacity-60 ${
                             message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
                           }`}>
                             {message.timestamp.toLocaleTimeString([], { 
@@ -230,14 +230,14 @@ export default function AIFab() {
                   ))}
                   {searchMutation.isPending && (
                     <div className="flex justify-start">
-                      <div className="flex items-start space-x-2">
+                      <div className="flex items-start gap-2">
                         <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                           <Bot className="w-4 h-4 text-electric-blue" />
                         </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                           <div className="flex items-center space-x-2">
                             <Loader2 className="w-4 h-4 animate-spin text-electric-blue" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Searching your business data...</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Analyzing your data...</span>
                           </div>
                         </div>
                       </div>
@@ -246,11 +246,13 @@ export default function AIFab() {
                 </div>
               </ScrollArea>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-                <Bot className="w-12 h-12 text-electric-blue" />
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 px-4">
+                <div className="w-16 h-16 bg-electric-blue/10 rounded-full flex items-center justify-center">
+                  <Bot className="w-8 h-8 text-electric-blue" />
+                </div>
                 <div>
-                  <h3 className="font-medium text-lg">AI Assistant</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <h3 className="font-medium text-lg text-gray-900 dark:text-gray-100">AI Assistant</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                     Ask me about your business data, leads, tasks, or anything else!
                   </p>
                 </div>
@@ -289,7 +291,7 @@ export default function AIFab() {
             )}
             
             {/* Search Input */}
-            <div className="border-t pt-4">
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-4 mt-4">
               <AISearchBar 
                 onSearch={handleSearch} 
                 onChat={handleChat}
@@ -297,17 +299,6 @@ export default function AIFab() {
                 compact
                 isLoading={searchMutation.isPending}
               />
-              <div className="mt-2 flex justify-between items-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={openAIAssistant}
-                  className="text-xs text-gray-500"
-                >
-                  <MessageCircle className="w-3 h-3 mr-1" />
-                  Open Full Assistant
-                </Button>
-              </div>
             </div>
           </div>
         </DialogContent>
