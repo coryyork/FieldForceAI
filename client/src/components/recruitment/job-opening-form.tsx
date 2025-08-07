@@ -39,6 +39,7 @@ const jobOpeningSchema = z.object({
   salaryMax: z.string().optional(),
   requirements: z.array(z.string()).default([]),
   benefits: z.array(z.string()).default([]),
+  calendarBookingUrl: z.string().optional(),
   status: z.enum(["active", "paused", "closed", "draft"]),
   publishedOnPortal: z.boolean().default(false),
   applicationDeadline: z.string().optional(),
@@ -72,6 +73,7 @@ export default function JobOpeningForm({ jobOpening, onSuccess, onCancel }: JobO
       salaryMax: jobOpening?.salaryMax || "",
       requirements: jobOpening?.requirements || [],
       benefits: jobOpening?.benefits || [],
+      calendarBookingUrl: jobOpening?.calendarBookingUrl || "",
       status: jobOpening?.status || "draft",
       publishedOnPortal: jobOpening?.publishedOnPortal || false,
       applicationDeadline: jobOpening?.applicationDeadline 
@@ -508,6 +510,27 @@ export default function JobOpeningForm({ jobOpening, onSuccess, onCancel }: JobO
               </FormControl>
               <FormDescription>
                 Highlight the perks and benefits that make this role attractive
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Calendar Booking Link */}
+        <FormField
+          control={form.control}
+          name="calendarBookingUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Calendar Booking Link</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="https://calendly.com/your-link or https://acuityscheduling.com/your-link"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Candidates will be redirected to this calendar booking link after successfully submitting their application to schedule an interview
               </FormDescription>
               <FormMessage />
             </FormItem>

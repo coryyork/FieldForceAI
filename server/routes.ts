@@ -897,6 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           salaryMax: jobOpenings.salaryMax,
           requirements: jobOpenings.requirements,
           benefits: jobOpenings.benefits,
+          calendarBookingUrl: jobOpenings.calendarBookingUrl,
           applicationDeadline: jobOpenings.applicationDeadline,
           createdAt: jobOpenings.createdAt,
           companyName: companies.name,

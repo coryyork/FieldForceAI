@@ -28,6 +28,7 @@ interface PublicJobOpening {
   salaryMax: string | null;
   requirements: string[] | null;
   benefits: string[] | null;
+  calendarBookingUrl: string | null;
   applicationDeadline: string | null;
   createdAt: string;
   companyName: string;
@@ -58,7 +59,7 @@ export default function JobPortal() {
     onSuccess: () => {
       toast({
         title: "Application Submitted Successfully!",
-        description: `Thank you for your comprehensive application to ${selectedJob?.title}. We'll review everything and get back to you soon.`,
+        description: `Thank you for your comprehensive application to ${selectedJob?.title}. ${selectedJob?.calendarBookingUrl ? 'You will now be redirected to schedule your interview.' : 'We\'ll review everything and get back to you soon.'}`,
       });
 
       // Reset everything
@@ -74,8 +75,17 @@ export default function JobPortal() {
         videoUrl: "",
       });
       setApplicationStep(1);
+      const jobToRedirect = selectedJob;
       setSelectedJob(null);
       setCurrentQuestion(0);
+
+      // Redirect to calendar booking URL if available
+      if (jobToRedirect?.calendarBookingUrl) {
+        setTimeout(() => {
+          window.open(jobToRedirect.calendarBookingUrl!, '_blank');
+          navigate('/jobs'); // Navigate back to jobs page after opening calendar booking
+        }, 2000); // Give user time to see the success message
+      }
     },
     onError: (error: any) => {
       toast({

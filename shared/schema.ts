@@ -272,6 +272,7 @@ export const jobOpenings = pgTable("job_openings", {
   salaryMax: decimal("salary_max", { precision: 12, scale: 2 }),
   requirements: text("requirements").array(),
   benefits: text("benefits").array(),
+  calendarBookingUrl: varchar("calendar_booking_url"),
   status: varchar("status").notNull().default("active"), // active, paused, closed, draft
   publishedOnPortal: boolean("published_on_portal").default(false), // Controls visibility on public job portal
   applicationDeadline: timestamp("application_deadline"),
