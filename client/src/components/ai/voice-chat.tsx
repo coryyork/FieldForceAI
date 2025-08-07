@@ -193,11 +193,11 @@ export default function VoiceChat({
         
         // Log every 50 frames to see if processing is happening
         if (processedFrameCount % 50 === 1) {
-          console.log(`Audio processing active! Frame count: ${processedFrameCount}, ws ready: ${ws.readyState === WebSocket.OPEN}, isListening: ${isListening}, isConnected: ${isConnected}`);
+          console.log(`Audio processing active! Frame count: ${processedFrameCount}, ws ready: ${ws.readyState === WebSocket.OPEN}`);
         }
         
-        // Send audio if WebSocket is ready, regardless of isListening state
-        if (ws.readyState === WebSocket.OPEN && isConnected) {
+        // Send audio if WebSocket is ready
+        if (ws.readyState === WebSocket.OPEN) {
           const inputData = e.inputBuffer.getChannelData(0);
           
           // Check if there's actual audio content
@@ -206,14 +206,19 @@ export default function VoiceChat({
           for (let i = 0; i < inputData.length; i++) {
             const sample = Math.abs(inputData[i]);
             amplitude = Math.max(amplitude, sample);
-            if (sample > 0.005) { // Lower threshold to detect quieter audio
+            if (sample > 0.001) { // Very low threshold to detect any audio
               hasAudio = true;
             }
           }
           
-          // Always log first few audio detections
-          if (hasAudio && Math.random() < 0.2) {
-            console.log("Audio detected! Amplitude:", amplitude.toFixed(4), "Sending to server...");
+          // Log amplitude occasionally to see if we're getting any input at all
+          if (processedFrameCount % 100 === 1) {
+            console.log("Audio amplitude check - Max amplitude:", amplitude.toFixed(6), "hasAudio:", hasAudio);
+          }
+          
+          // Always log when audio is detected
+          if (hasAudio) {
+            console.log("🎤 AUDIO DETECTED! Amplitude:", amplitude.toFixed(4), "Sending to server...");
           }
           
           if (hasAudio) {
