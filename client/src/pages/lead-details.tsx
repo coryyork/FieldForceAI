@@ -176,9 +176,10 @@ export default function LeadDetails() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-              {/* Contact Information - Left Column */}
-              <div className="lg:col-span-1 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
+              {/* Main Content Area - Contact Info and Notes Timeline */}
+              <div className="lg:col-span-3 space-y-6">
+                {/* Contact Information */}
                 <div className="app-card">
                   <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
@@ -186,63 +187,66 @@ export default function LeadDetails() {
                       Contact Information
                     </h3>
                   </div>
-                  <div className="p-6 space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</label>
-                      <p className="text-gray-900 dark:text-white">{lead.name}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Title</label>
-                      <p className="text-gray-900 dark:text-white">{lead.title || "N/A"}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</label>
-                      <p className="text-gray-900 dark:text-white flex items-center">
-                        {lead.email ? (
-                          <>
-                            <Mail className="w-4 h-4 mr-2" />
-                            <a href={`mailto:${lead.email}`} className="text-blue-600 hover:underline">
-                              {lead.email}
-                            </a>
-                          </>
-                        ) : "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</label>
-                      <p className="text-gray-900 dark:text-white flex items-center">
-                        {lead.phone ? (
-                          <>
-                            <Phone className="w-4 h-4 mr-2" />
-                            <a href={`tel:${lead.phone}`} className="text-blue-600 hover:underline">
-                              {lead.phone}
-                            </a>
-                          </>
-                        ) : "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Company</label>
-                      <p className="text-gray-900 dark:text-white flex items-center">
-                        {lead.company ? (
-                          <>
-                            <Building className="w-4 h-4 mr-2" />
-                            {lead.company}
-                          </>
-                        ) : "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Source</label>
-                      <p className="text-gray-900 dark:text-white">{lead.source || "N/A"}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned To</label>
-                      <p className="text-gray-900 dark:text-white">{lead.assignedUserId || "Unassigned"}</p>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</label>
+                        <p className="text-gray-900 dark:text-white">{lead.name}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Title</label>
+                        <p className="text-gray-900 dark:text-white">{lead.title || "N/A"}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</label>
+                        <p className="text-gray-900 dark:text-white flex items-center">
+                          {lead.email ? (
+                            <>
+                              <Mail className="w-4 h-4 mr-2" />
+                              <a href={`mailto:${lead.email}`} className="text-blue-600 hover:underline">
+                                {lead.email}
+                              </a>
+                            </>
+                          ) : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</label>
+                        <p className="text-gray-900 dark:text-white flex items-center">
+                          {lead.phone ? (
+                            <>
+                              <Phone className="w-4 h-4 mr-2" />
+                              <a href={`tel:${lead.phone}`} className="text-blue-600 hover:underline">
+                                {lead.phone}
+                              </a>
+                            </>
+                          ) : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Company</label>
+                        <p className="text-gray-900 dark:text-white flex items-center">
+                          {lead.company ? (
+                            <>
+                              <Building className="w-4 h-4 mr-2" />
+                              {lead.company}
+                            </>
+                          ) : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Source</label>
+                        <p className="text-gray-900 dark:text-white">{lead.source || "N/A"}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned To</label>
+                        <p className="text-gray-900 dark:text-white">{lead.assignedUserId || "Unassigned"}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
+                {/* Lead Notes */}
                 {lead.notes && (
                   <div className="app-card">
                     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -253,10 +257,8 @@ export default function LeadDetails() {
                     </div>
                   </div>
                 )}
-              </div>
 
-              {/* Notes Timeline - Middle Column */}
-              <div className="lg:col-span-1 space-y-6">
+                {/* Notes Timeline */}
                 <NotesTimeline leadId={lead.id} />
               </div>
 
