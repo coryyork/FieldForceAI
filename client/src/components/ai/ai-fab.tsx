@@ -132,7 +132,7 @@ export default function AIFab() {
   return (
     <>
       {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-6 right-6 z-40">
         <Button
           onClick={() => setIsOpen(true)}
           className="w-14 h-14 rounded-full bg-electric-blue hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-target"
@@ -144,7 +144,19 @@ export default function AIFab() {
 
       {/* AI Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-lg h-[600px] flex flex-col">
+        <DialogContent 
+          className="sm:max-w-[400px] h-[600px] flex flex-col shadow-2xl border-2 border-electric-blue/10 z-50"
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            right: '20px',
+            top: 'auto',
+            left: 'auto',
+            transform: 'none',
+            margin: '0',
+            zIndex: 9999
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <div className="flex items-center">
