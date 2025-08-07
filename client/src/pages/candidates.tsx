@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { 
   Users, 
   Search, 
@@ -63,6 +64,7 @@ const statusConfig = {
 
 export default function Candidates() {
   const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateWithJobDetails | null>(null);
@@ -310,144 +312,14 @@ export default function Candidates() {
 
                     {/* Actions */}
                     <div className="ml-6">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openCandidateDetails(candidate)}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>
-                              {selectedCandidate?.firstName} {selectedCandidate?.lastName}
-                            </DialogTitle>
-                            <DialogDescription>
-                              Application for {selectedCandidate?.jobTitle}
-                            </DialogDescription>
-                          </DialogHeader>
-
-                          <div className="space-y-6">
-                            {/* Contact Information */}
-                            <div>
-                              <h4 className="font-semibold mb-3">Contact Information</h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                  <Label className="text-sm font-medium">Email</Label>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">{selectedCandidate?.email}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-medium">Phone</Label>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">{selectedCandidate?.phone}</p>
-                                </div>
-                                <div className="sm:col-span-2">
-                                  <Label className="text-sm font-medium">Address</Label>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">{selectedCandidate?.address}</p>
-                                </div>
-                                {selectedCandidate?.linkedinUrl && (
-                                  <div className="sm:col-span-2">
-                                    <Label className="text-sm font-medium">LinkedIn Profile</Label>
-                                    <a 
-                                      href={selectedCandidate.linkedinUrl} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-sm text-blue-600 hover:underline block"
-                                    >
-                                      {selectedCandidate.linkedinUrl}
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Video Interview */}
-                            {selectedCandidate?.videoUrl && (
-                              <div>
-                                <h4 className="font-semibold mb-3">Video Interview</h4>
-                                {selectedCandidate.videoUrl === "recorded-video-placeholder" ? (
-                                  <div className="bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
-                                    <Video className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                                    <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Video Interview Recorded</h4>
-                                    <p className="text-gray-600 dark:text-gray-400">
-                                      The candidate has submitted a video interview. In a production system, the actual video file would be stored and playable here.
-                                    </p>
-                                    <Badge className="mt-3 bg-blue-100 text-blue-800 border-0">
-                                      Video Available
-                                    </Badge>
-                                  </div>
-                                ) : (
-                                  <div className="space-y-3">
-                                    <video 
-                                      src={selectedCandidate.videoUrl} 
-                                      controls 
-                                      className="w-full rounded-lg"
-                                      style={{ maxHeight: "300px" }}
-                                      onError={(e) => {
-                                        console.log("Video failed to load:", selectedCandidate.videoUrl);
-                                        // Show fallback message instead of hiding
-                                        const fallbackDiv = e.currentTarget.nextElementSibling as HTMLElement;
-                                        if (fallbackDiv) {
-                                          e.currentTarget.style.display = 'none';
-                                          fallbackDiv.style.display = 'block';
-                                        }
-                                      }}
-                                    />
-                                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 text-center hidden">
-                                      <Video className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                                      <p className="text-sm text-amber-800 dark:text-amber-200">
-                                        Video interview was submitted but the file is no longer accessible. This can happen with temporary video files from the application process.
-                                      </p>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Update Status and Notes */}
-                            <form onSubmit={handleUpdateCandidate} className="space-y-4">
-                              <div>
-                                <Label htmlFor="status">Status</Label>
-                                <Select value={statusUpdate} onValueChange={setStatusUpdate}>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="submitted">Submitted</SelectItem>
-                                    <SelectItem value="reviewing">Reviewing</SelectItem>
-                                    <SelectItem value="interviewed">Interviewed</SelectItem>
-                                    <SelectItem value="hired">Hired</SelectItem>
-                                    <SelectItem value="rejected">Rejected</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div>
-                                <Label htmlFor="notes">Internal Notes</Label>
-                                <Textarea
-                                  id="notes"
-                                  placeholder="Add internal notes about this candidate..."
-                                  value={notes}
-                                  onChange={(e) => setNotes(e.target.value)}
-                                  rows={4}
-                                />
-                              </div>
-
-                              <div className="flex justify-end gap-2">
-                                <Button type="button" variant="outline" onClick={() => setSelectedCandidate(null)}>
-                                  Cancel
-                                </Button>
-                                <Button type="submit" disabled={updateCandidateMutation.isPending}>
-                                  {updateCandidateMutation.isPending ? "Updating..." : "Update Candidate"}
-                                </Button>
-                              </div>
-                            </form>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/candidates/${candidate.id}`)}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Details
+                      </Button>
                     </div>
                   </div>
                 </CardContent>

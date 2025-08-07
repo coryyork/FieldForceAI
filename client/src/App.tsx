@@ -16,6 +16,7 @@ import AISettings from "@/pages/ai-settings";
 import TasksPage from "@/pages/tasks";
 import Recruitment from "@/pages/recruitment";
 import Candidates from "@/pages/candidates";
+import CandidateDetails from "@/pages/candidate-details";
 import JobPortal from "@/pages/job-portal";
 import NotFound from "@/pages/not-found";
 
@@ -46,6 +47,7 @@ function Router() {
           <Route path="/tasks" component={TasksPage} />
           <Route path="/recruitment" component={Recruitment} />
           <Route path="/candidates" component={Candidates} />
+          <Route path="/candidates/:id" component={CandidateDetails} />
         </>
       )}
       <Route component={NotFound} />
