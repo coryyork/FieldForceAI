@@ -4,11 +4,7 @@ import { Clock, UserCheck, Users, FileCheck, CheckCircle, XCircle } from "lucide
 
 export type CandidateStage = "applied" | "1st_round" | "2nd_round" | "offered" | "accepted" | "rejected";
 
-interface StageSelectorProps {
-  stage: CandidateStage;
-  onStageChange: (newStage: CandidateStage) => void;
-  disabled?: boolean;
-}
+
 
 const stageConfig = {
   applied: {
@@ -43,9 +39,17 @@ const stageConfig = {
   },
 };
 
+interface StageSelectorProps {
+  stage: CandidateStage | string;
+  onStageChange: (newStage: CandidateStage) => void;
+  disabled?: boolean;
+}
+
 export function StageSelector({ stage, onStageChange, disabled = false }: StageSelectorProps) {
-  const config = stageConfig[stage];
-  const Icon = config.icon;
+  // Map legacy stages to new stages
+  const mappedStage = legacyStageMapping[stage] || stage as CandidateStage;
+  const config = stageConfig[mappedStage] || stageConfig.applied;
+  const Icon = config?.icon || Clock;
 
   return (
     <div className="flex items-center gap-3">
@@ -55,7 +59,7 @@ export function StageSelector({ stage, onStageChange, disabled = false }: StageS
       </Badge>
       
       {!disabled && (
-        <Select value={stage} onValueChange={onStageChange}>
+        <Select value={mappedStage} onValueChange={onStageChange}>
           <SelectTrigger className="w-[200px]">
             <SelectValue />
           </SelectTrigger>
@@ -78,9 +82,20 @@ export function StageSelector({ stage, onStageChange, disabled = false }: StageS
   );
 }
 
-export function StageBadge({ stage }: { stage: CandidateStage }) {
-  const config = stageConfig[stage];
-  const Icon = config.icon;
+// Legacy stage mapping for backward compatibility
+const legacyStageMapping: Record<string, CandidateStage> = {
+  "submitted": "applied",
+  "reviewing": "1st_round", 
+  "interviewed": "2nd_round",
+  "hired": "accepted",
+  "rejected": "rejected"
+};
+
+export function StageBadge({ stage }: { stage: CandidateStage | string }) {
+  // Map legacy stages to new stages
+  const mappedStage = legacyStageMapping[stage] || stage as CandidateStage;
+  const config = stageConfig[mappedStage] || stageConfig.applied; // fallback to applied if unknown stage
+  const Icon = config?.icon || Clock;
 
   return (
     <Badge className={`${config.color} border-0 flex items-center gap-1.5`}>

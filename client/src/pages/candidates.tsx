@@ -46,7 +46,7 @@ interface CandidateWithJobDetails {
   address: string;
   linkedinUrl: string | null;
   videoUrl: string | null;
-  status: CandidateStage;
+  status: string;
   notes: string | null;
   createdAt: string;
   jobTitle: string;
@@ -117,7 +117,16 @@ export default function Candidates() {
       candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       candidate.jobTitle.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStage = stageFilter === "all" || candidate.status === stageFilter;
+    // Handle legacy stage mapping for filtering
+    const legacyStageMapping: Record<string, string> = {
+      "submitted": "applied",
+      "reviewing": "1st_round", 
+      "interviewed": "2nd_round",
+      "hired": "accepted",
+      "rejected": "rejected"
+    };
+    const mappedStage = legacyStageMapping[candidate.status] || candidate.status;
+    const matchesStage = stageFilter === "all" || mappedStage === stageFilter;
     
     return matchesSearch && matchesStage;
   });
