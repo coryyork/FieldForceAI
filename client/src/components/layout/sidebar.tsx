@@ -14,7 +14,8 @@ import {
   LogOut,
   ChevronDown,
   ChevronRight,
-  Building2
+  Building2,
+  Briefcase
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -58,6 +59,11 @@ const navigationItems = [
     icon: Building2,
     submenu: [
       {
+        name: "Job Openings",
+        href: "/recruitment",
+        icon: Briefcase,
+      },
+      {
         name: "Job Portal",
         href: "/jobs",
         icon: Building2,
@@ -83,7 +89,7 @@ interface SidebarProps {
 export default function Sidebar({ mobile = false }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(["AI Assistant"]);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(["AI Assistant", "Recruitment"]);
 
   const handleLogout = () => {
     window.location.href = "/api/logout";
