@@ -282,43 +282,31 @@ export default function LeadDetails() {
                 )}
               </div>
 
-              {/* Deal Information */}
+              {/* Quick Actions */}
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <DollarSign className="w-5 h-5 mr-2" />
-                      Deal Information
+                      Quick Actions
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Stage</label>
-                      <div className="mt-1">
-                        <Badge className={getStageColor(lead.stage)}>
-                          {formatStage(lead.stage)}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Deal Value</label>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        ${parseFloat(lead.value || 0).toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Probability</label>
-                      <div className="flex items-center mt-1">
-                        <TrendingUp className="w-4 h-4 mr-2 text-green-600" />
-                        <span className="text-gray-900 dark:text-white">{lead.probability || 0}%</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Expected Value</label>
-                      <p className="text-lg font-semibold text-green-600">
-                        ${((parseFloat(lead.value || 0) * (lead.probability || 0)) / 100).toLocaleString()}
-                      </p>
-                    </div>
+                    <Button 
+                      className="w-full bg-electric-blue hover:bg-blue-600 text-white touch-target"
+                      onClick={() => window.open('https://webware.io/demo', '_blank')}
+                    >
+                      Book a Webware Demo
+                    </Button>
+                    <Button 
+                      className="w-full bg-orange-600 hover:bg-orange-700 text-white touch-target"
+                      onClick={() => {
+                        // Process new AT&T deal logic here
+                        console.log('Processing new AT&T deal for lead:', lead.id);
+                      }}
+                    >
+                      Process New AT&T Deal
+                    </Button>
                   </CardContent>
                 </Card>
 
