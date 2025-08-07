@@ -29,6 +29,7 @@ function Router() {
     <Switch>
       {/* Public routes - accessible without authentication */}
       <Route path="/jobs" component={JobPortal} />
+      <Route path="/jobs/:jobId" component={JobPortal} />
       
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />

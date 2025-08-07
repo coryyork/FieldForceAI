@@ -1,6 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, MapPin, Calendar, DollarSign, Users, Clock, ArrowRight, Star, CheckCircle, Briefcase, Mail, Phone, FileText, X, User, Linkedin, Video, Play, Square, RotateCcw, Upload, ExternalLink, Settings, Camera, Mic, Loader2 } from "lucide-react";
+import { useLocation, useParams } from "wouter";
+import { Building2, MapPin, Calendar, DollarSign, Users, Clock, ArrowRight, Star, CheckCircle, Briefcase, Mail, Phone, FileText, X, User, Linkedin, Video, Play, Square, RotateCcw, Upload, ExternalLink, Settings, Camera, Mic, Loader2, Share, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +33,9 @@ interface PublicJobOpening {
 }
 
 export default function JobPortal() {
+  const [, navigate] = useLocation();
+  const params = useParams();
+  
   // Fetch public job openings
   const { data: jobOpenings = [], isLoading } = useQuery<PublicJobOpening[]>({
     queryKey: ["/api/public/job-openings"],
@@ -39,6 +43,17 @@ export default function JobPortal() {
 
   // Get company name from the first job opening (since they're all from the same company)
   const companyName = jobOpenings.length > 0 ? jobOpenings[0].companyName : "Field Force";
+  
+  // Handle direct job linking
+  useEffect(() => {
+    if (params.jobId && jobOpenings.length > 0) {
+      const job = jobOpenings.find(j => j.id === params.jobId);
+      if (job) {
+        setSelectedJob(job);
+        setApplicationStep(1);
+      }
+    }
+  }, [params.jobId, jobOpenings]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
@@ -375,6 +390,41 @@ export default function JobPortal() {
     }
   };
 
+  const copyJobURL = async (jobId: string, jobTitle: string) => {
+    const url = `${window.location.origin}/jobs/${jobId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link Copied!",
+        description: `Shareable link for "${jobTitle}" has been copied to your clipboard.`,
+      });
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast({
+          title: "Link Copied!",
+          description: `Shareable link for "${jobTitle}" has been copied to your clipboard.`,
+        });
+      } catch (fallbackErr) {
+        toast({
+          title: "Copy Failed",
+          description: "Unable to copy link. Please copy the URL from your browser address bar.",
+          variant: "destructive",
+        });
+      }
+      textArea.remove();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -653,35 +703,55 @@ export default function JobPortal() {
                           )}
                         </div>
                         
-                        {/* Apply Button */}
-                        <Dialog open={selectedJob?.id === job.id} onOpenChange={(open) => {
-                          if (!open) {
-                            setSelectedJob(null);
-                            setApplicationStep(1);
-                            setApplicationData({
-                              firstName: "",
-                              lastName: "",
-                              address: "",
-                              phone: "",
-                              email: "",
-                              linkedinUrl: "",
-                              linkedinConnected: false,
-                              videoBlob: null,
-                              videoUrl: "",
-                            });
-                          }
-                        }}>
-                          <DialogTrigger asChild>
-                            <Button 
-                              size="lg"
-                              className="bg-electric-blue hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-0 min-w-[140px]"
-                              onClick={() => setSelectedJob(job)}
-                            >
-                              <span className="mr-2">Apply Now</span>
-                              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                            </Button>
-                          </DialogTrigger>
-                        </Dialog>
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-3">
+                          {/* Copy Link Button */}
+                          <Button
+                            variant="outline"
+                            size="lg"
+                            onClick={() => copyJobURL(job.id, job.title)}
+                            className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                          >
+                            <Share className="w-4 h-4 mr-2" />
+                            Copy Link
+                          </Button>
+                          
+                          {/* Apply Button */}
+                          <Dialog open={selectedJob?.id === job.id} onOpenChange={(open) => {
+                            if (!open) {
+                              setSelectedJob(null);
+                              setApplicationStep(1);
+                              setApplicationData({
+                                firstName: "",
+                                lastName: "",
+                                address: "",
+                                phone: "",
+                                email: "",
+                                linkedinUrl: "",
+                                linkedinConnected: false,
+                                videoBlob: null,
+                                videoUrl: "",
+                              });
+                              // Navigate back to main jobs page when closing modal
+                              navigate('/jobs');
+                            }
+                          }}>
+                            <DialogTrigger asChild>
+                              <Button 
+                                size="lg"
+                                className="bg-electric-blue hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-0 min-w-[140px]"
+                                onClick={() => {
+                                  setSelectedJob(job);
+                                  // Update URL when opening application modal
+                                  navigate(`/jobs/${job.id}`);
+                                }}
+                              >
+                                <span className="mr-2">Apply Now</span>
+                                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                              </Button>
+                            </DialogTrigger>
+                          </Dialog>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -709,6 +779,8 @@ export default function JobPortal() {
               videoBlob: null,
               videoUrl: "",
             });
+            // Navigate back to main jobs page when closing modal
+            navigate('/jobs');
           }
         }}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
