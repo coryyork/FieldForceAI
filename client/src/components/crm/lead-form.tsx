@@ -408,100 +408,108 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
           />
         </div>
 
-        {/* Address Section */}
-        <div className="space-y-3 sm:space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Address Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+        {/* Main content area with notes and address side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* Notes Section - Takes up 2/3 of the width on desktop */}
+          <div className="lg:col-span-2">
             <FormField
               control={form.control}
-              name="street"
+              name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Street Address</FormLabel>
+                  <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Input placeholder="123 Main Street" {...field} value={field.value || ""} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>City</FormLabel>
-                  <FormControl>
-                    <Input placeholder="New York" {...field} value={field.value || ""} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>State/Province</FormLabel>
-                  <FormControl>
-                    <Input placeholder="NY" {...field} value={field.value || ""} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="zipCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>ZIP/Postal Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="10001" {...field} value={field.value || ""} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="country"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Country</FormLabel>
-                  <FormControl>
-                    <Input placeholder="United States" {...field} value={field.value || ""} />
+                    <Textarea
+                      placeholder="Additional information about this lead..."
+                      className="resize-none min-h-[200px] sm:min-h-[250px]"
+                      {...field}
+                      value={field.value || ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-        </div>
 
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Additional information about this lead..."
-                  className="resize-none"
-                  {...field}
-                  value={field.value || ""}
+          {/* Address Section - Takes up 1/3 of the width on desktop */}
+          <div className="lg:col-span-1">
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Address Information</h3>
+              <div className="space-y-3 sm:space-y-4">
+                <FormField
+                  control={form.control}
+                  name="street"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Street Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123 Main Street" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Input placeholder="New York" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>State/Province</FormLabel>
+                      <FormControl>
+                        <Input placeholder="NY" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="zipCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ZIP/Postal Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="10001" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <FormControl>
+                        <Input placeholder="United States" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t">
           <Button type="button" variant="outline" onClick={onSuccess} className="touch-target">
