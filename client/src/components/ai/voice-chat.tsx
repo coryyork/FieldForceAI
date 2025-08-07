@@ -6,11 +6,18 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 
 interface VoiceChatProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isEnabled: boolean;
+  onTranscript?: (text: string) => void;
+  onConnectionChange?: (connected: boolean) => void;
+  onMuteChange?: (muted: boolean) => void;
 }
 
-export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
+export default function VoiceChat({ 
+  isEnabled, 
+  onTranscript, 
+  onConnectionChange,
+  onMuteChange 
+}: VoiceChatProps) {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -124,9 +131,15 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
           } else if (data.type === "transcript") {
             // Handle transcription updates
             console.log("Transcript:", data.text);
+            if (onTranscript && data.text) {
+              onTranscript(data.text);
+            }
           } else if (data.type === "transcript_delta") {
             // Handle partial transcriptions
             console.log("Transcript delta:", data.text);
+            if (onTranscript && data.text) {
+              onTranscript(data.text);
+            }
           } else if (data.type === "error") {
             console.error("Voice API error:", data.error);
             toast({
@@ -313,119 +326,33 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
     }
   };
 
-  // Clean up on unmount
+  // Auto-connect when enabled
   useEffect(() => {
+    if (isEnabled) {
+      connectToVoiceAPI();
+    } else {
+      disconnectVoice();
+    }
+    
     return () => {
       disconnectVoice();
     };
-  }, []);
+  }, [isEnabled]);
+  
+  // Notify parent of connection changes
+  useEffect(() => {
+    if (onConnectionChange) {
+      onConnectionChange(isConnected);
+    }
+  }, [isConnected, onConnectionChange]);
+  
+  // Notify parent of mute changes
+  useEffect(() => {
+    if (onMuteChange) {
+      onMuteChange(isMuted);
+    }
+  }, [isMuted, onMuteChange]);
 
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md p-6 space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold">Voice Assistant</h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            {connectionStatus === "connecting" && "Connecting to voice service..."}
-            {connectionStatus === "connected" && `Speaking with ${aiSettings?.aiName || "AI Assistant"}`}
-            {connectionStatus === "disconnected" && "Click connect to start voice chat"}
-          </p>
-        </div>
-
-        {/* Voice Visualizer */}
-        <div className="flex justify-center">
-          <div className={`relative w-32 h-32 rounded-full flex items-center justify-center ${
-            isConnected ? "bg-electric-blue/20" : "bg-gray-200 dark:bg-gray-700"
-          }`}>
-            {connectionStatus === "connecting" ? (
-              <Loader2 className="w-12 h-12 animate-spin text-electric-blue" />
-            ) : isListening ? (
-              <div className="relative">
-                <Mic className={`w-12 h-12 ${isMuted ? "text-gray-400" : "text-electric-blue"}`} />
-                {!isMuted && (
-                  <div className="absolute inset-0 animate-pulse">
-                    <div className="w-full h-full rounded-full border-4 border-electric-blue/50"></div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <MicOff className="w-12 h-12 text-gray-400" />
-            )}
-          </div>
-        </div>
-
-        {/* Voice Info */}
-        {isConnected && aiSettings?.voiceId && (
-          <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-            <div className="flex items-center justify-center space-x-2">
-              <Volume2 className="w-4 h-4" />
-              <span>Voice: {aiSettings.voiceId.charAt(0).toUpperCase() + aiSettings.voiceId.slice(1)}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Controls */}
-        <div className="flex justify-center space-x-4">
-          {!isConnected ? (
-            <Button
-              onClick={connectToVoiceAPI}
-              disabled={connectionStatus === "connecting"}
-              className="bg-electric-blue hover:bg-blue-600 text-white"
-            >
-              <Phone className="w-4 h-4 mr-2" />
-              {connectionStatus === "connecting" ? "Connecting..." : "Connect"}
-            </Button>
-          ) : (
-            <>
-              <Button
-                onClick={() => setIsMuted(!isMuted)}
-                variant={isMuted ? "destructive" : "outline"}
-              >
-                {isMuted ? (
-                  <>
-                    <MicOff className="w-4 h-4 mr-2" />
-                    Unmute
-                  </>
-                ) : (
-                  <>
-                    <Mic className="w-4 h-4 mr-2" />
-                    Mute
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={disconnectVoice}
-                variant="destructive"
-              >
-                <PhoneOff className="w-4 h-4 mr-2" />
-                Disconnect
-              </Button>
-            </>
-          )}
-          <Button
-            onClick={onClose}
-            variant="outline"
-          >
-            Close
-          </Button>
-        </div>
-
-        {/* Instructions */}
-        <div className="text-xs text-center text-gray-500 dark:text-gray-400">
-          {!isConnected && "Voice conversations require microphone access"}
-          {isConnected && !isMuted && "Speak clearly - the AI will respond when you pause"}
-          {isConnected && isMuted && "Your microphone is muted"}
-        </div>
-        
-        {/* Debug Info */}
-        {isConnected && (
-          <div className="text-xs text-center text-gray-400">
-            Connection: {connectionStatus} | Audio Context: {audioContextRef.current?.state}
-          </div>
-        )}
-      </Card>
-    </div>
-  );
+  // This is a headless component - no UI
+  return null;
 }
