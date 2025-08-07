@@ -368,12 +368,29 @@ export default function Candidates() {
                             {selectedCandidate?.videoUrl && (
                               <div>
                                 <h4 className="font-semibold mb-3">Video Interview</h4>
-                                <video 
-                                  src={selectedCandidate.videoUrl} 
-                                  controls 
-                                  className="w-full rounded-lg"
-                                  style={{ maxHeight: "300px" }}
-                                />
+                                {selectedCandidate.videoUrl === "recorded-video-placeholder" ? (
+                                  <div className="bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+                                    <Video className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                    <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Video Interview Recorded</h4>
+                                    <p className="text-gray-600 dark:text-gray-400">
+                                      The candidate has submitted a video interview. In a production system, the actual video file would be stored and playable here.
+                                    </p>
+                                    <Badge className="mt-3 bg-blue-100 text-blue-800 border-0">
+                                      Video Available
+                                    </Badge>
+                                  </div>
+                                ) : (
+                                  <video 
+                                    src={selectedCandidate.videoUrl} 
+                                    controls 
+                                    className="w-full rounded-lg"
+                                    style={{ maxHeight: "300px" }}
+                                    onError={(e) => {
+                                      console.log("Video failed to load:", selectedCandidate.videoUrl);
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                )}
                               </div>
                             )}
 
