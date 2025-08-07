@@ -16,14 +16,18 @@ export class AIService {
       console.log("Query:", query);
       console.log("Search results:", JSON.stringify(searchResults, null, 2));
       
-      // For queries that need analysis rather than text search, get all leads
+      // For queries that need analysis rather than text search, get all data
       let allLeads: any[] = [];
-      const analysisKeywords = ['top', 'best', 'high', 'recent', 'latest', 'newest', 'oldest', 'biggest', 'largest', 'most', 'all', 'my leads', 'show leads'];
+      let allDocuments: any[] = [];
+      let allTasks: any[] = [];
+      const analysisKeywords = ['top', 'best', 'high', 'recent', 'latest', 'newest', 'oldest', 'biggest', 'largest', 'most', 'all', 'my leads', 'show leads', 'docs', 'documents', 'have access'];
       const needsAnalysis = analysisKeywords.some(keyword => query.toLowerCase().includes(keyword));
       
-      if (needsAnalysis || searchResults.leads.length === 0) {
+      if (needsAnalysis || (searchResults.leads.length === 0 && searchResults.documents.length === 0 && searchResults.tasks.length === 0)) {
         allLeads = await storage.getLeads(companyId);
-        console.log("Got all leads for analysis:", allLeads.length);
+        allDocuments = await storage.getDocuments(companyId);
+        allTasks = await storage.getTasks(companyId);
+        console.log("Got all data for analysis - Leads:", allLeads.length, "Documents:", allDocuments.length, "Tasks:", allTasks.length);
       }
       
       // Use AI to analyze and rank the results
@@ -36,6 +40,8 @@ export class AIService {
         Available data:
         Search Results: ${JSON.stringify(searchResults, null, 2)}
         ${allLeads.length > 0 ? `All Leads: ${JSON.stringify(allLeads, null, 2)}` : ''}
+        ${allDocuments.length > 0 ? `All Documents: ${JSON.stringify(allDocuments, null, 2)}` : ''}
+        ${allTasks.length > 0 ? `All Tasks: ${JSON.stringify(allTasks, null, 2)}` : ''}
         
         Guidelines:
         - Be conversational and friendly, not robotic
@@ -78,7 +84,9 @@ export class AIService {
         query,
         analysis,
         rawResults: searchResults,
-        allLeadsCount: allLeads.length
+        allLeadsCount: allLeads.length,
+        allDocumentsCount: allDocuments.length,
+        allTasksCount: allTasks.length
       };
     } catch (error) {
       console.error("Error in AI search:", error);
