@@ -20,7 +20,7 @@ export default function VoiceChat({
 }: VoiceChatProps) {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(false); // Note: muted state is for UI only, audio always sent
   const [isListening, setIsListening] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const wsRef = useRef<WebSocket | null>(null);
@@ -174,7 +174,8 @@ export default function VoiceChat({
       
       // Process and send audio chunks
       processorRef.current.onaudioprocess = (e) => {
-        if (!isMuted && isListening && ws.readyState === WebSocket.OPEN) {
+        // Remove muted check - we should always send audio to OpenAI for processing
+        if (isListening && ws.readyState === WebSocket.OPEN) {
           const inputData = e.inputBuffer.getChannelData(0);
           
           // Check if there's actual audio content
@@ -205,10 +206,8 @@ export default function VoiceChat({
                 type: "input_audio_buffer.append",
                 audio: btoa(binaryString)
               }));
-              // Log only once every few chunks to avoid spam
-              if (Math.random() < 0.01) {
-                console.log("Sending audio chunk, amplitude:", amplitude.toFixed(3));
-              }
+              // Log audio sending for debugging
+              console.log("Sending audio chunk, amplitude:", amplitude.toFixed(3), "size:", uint8Array.length);
             } catch (error) {
               console.error("Error sending audio:", error);
             }

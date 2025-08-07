@@ -46,9 +46,17 @@ export function handleVoiceWebSocket(ws: WebSocket, request: IncomingMessage, us
         return;
       }
       
+      // Log audio messages for debugging
+      if (data.type === 'input_audio_buffer.append') {
+        console.log('Received audio chunk from client, size:', data.audio?.length || 0);
+      } else if (data.type === 'input_audio_buffer.commit') {
+        console.log('Committing audio buffer to OpenAI');
+      } else {
+        console.log('Received client message:', data.type);
+      }
+      
       if (session.openaiWs && session.openaiWs.readyState === WebSocket.OPEN) {
         // Forward message to OpenAI
-        console.log('Forwarding message to OpenAI:', data.type);
         session.openaiWs.send(JSON.stringify(data));
       } else {
         console.log('OpenAI connection not ready, queueing message:', data.type);
