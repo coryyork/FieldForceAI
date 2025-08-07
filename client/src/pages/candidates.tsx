@@ -380,16 +380,29 @@ export default function Candidates() {
                                     </Badge>
                                   </div>
                                 ) : (
-                                  <video 
-                                    src={selectedCandidate.videoUrl} 
-                                    controls 
-                                    className="w-full rounded-lg"
-                                    style={{ maxHeight: "300px" }}
-                                    onError={(e) => {
-                                      console.log("Video failed to load:", selectedCandidate.videoUrl);
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
+                                  <div className="space-y-3">
+                                    <video 
+                                      src={selectedCandidate.videoUrl} 
+                                      controls 
+                                      className="w-full rounded-lg"
+                                      style={{ maxHeight: "300px" }}
+                                      onError={(e) => {
+                                        console.log("Video failed to load:", selectedCandidate.videoUrl);
+                                        // Show fallback message instead of hiding
+                                        const fallbackDiv = e.currentTarget.nextElementSibling as HTMLElement;
+                                        if (fallbackDiv) {
+                                          e.currentTarget.style.display = 'none';
+                                          fallbackDiv.style.display = 'block';
+                                        }
+                                      }}
+                                    />
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 text-center hidden">
+                                      <Video className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+                                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                                        Video interview was submitted but the file is no longer accessible. This can happen with temporary video files from the application process.
+                                      </p>
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             )}
