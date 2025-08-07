@@ -46,6 +46,12 @@ export default function LeadDetails() {
     enabled: isAuthenticated && !!params?.id,
   });
 
+  // Fetch assigned user data if lead has an assignedUserId
+  const { data: assignedUser } = useQuery({
+    queryKey: ["/api/users", lead?.assignedUserId],
+    enabled: !!lead?.assignedUserId,
+  });
+
 
 
   const deleteLeadMutation = useMutation({
@@ -255,7 +261,9 @@ export default function LeadDetails() {
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned To</label>
-                        <p className="text-gray-900 dark:text-white">{lead.assignedUserId || "Unassigned"}</p>
+                        <p className="text-gray-900 dark:text-white">
+                          {assignedUser ? `${assignedUser.firstName || ''} ${assignedUser.lastName || ''}`.trim() || assignedUser.email : lead.assignedUserId ? "Loading..." : "Unassigned"}
+                        </p>
                       </div>
                     </div>
                   </div>
