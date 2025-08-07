@@ -91,7 +91,7 @@ export async function setupAuth(app: Express) {
     try {
       const { username, email, password, firstName, lastName } = req.body;
       
-      // Check if user already exists
+      // Check if user already exists (case-insensitive)
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
@@ -100,8 +100,8 @@ export async function setupAuth(app: Express) {
       // Hash password and create user
       const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
-        username,
-        email,
+        username, // Store with original case
+        email: email.toLowerCase(), // Store email in lowercase
         password: hashedPassword,
         firstName,
         lastName,
