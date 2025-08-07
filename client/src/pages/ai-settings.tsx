@@ -10,17 +10,16 @@ import Header from "@/components/layout/header";
 import AIFab from "@/components/ai/ai-fab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { Brain, Bot, Sparkles, Save, RotateCcw, Mic, Volume2 } from "lucide-react";
+import { Brain, Bot, Sparkles, Save, RotateCcw, Mic, Volume2, X, Plus } from "lucide-react";
 import { z } from "zod";
 
 const aiSettingsSchema = z.object({
   aiName: z.string().min(1, "AI name is required").max(50, "AI name must be 50 characters or less"),
-  personalityDescription: z.string().max(500, "Description must be 500 characters or less").optional(),
-  responseStyle: z.enum(["professional", "casual", "friendly", "technical"]),
+  personalityKeywords: z.array(z.string()).default([]),
   autoSuggestions: z.boolean(),
   voiceEnabled: z.boolean(),
   voiceId: z.enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]),
@@ -33,12 +32,13 @@ export default function AISettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const [keywordInput, setKeywordInput] = useState("");
+
   const form = useForm<AISettingsData>({
     resolver: zodResolver(aiSettingsSchema),
     defaultValues: {
       aiName: "AI Assistant",
-      personalityDescription: "",
-      responseStyle: "professional",
+      personalityKeywords: [],
       autoSuggestions: true,
       voiceEnabled: false,
       voiceId: "alloy",
@@ -49,8 +49,7 @@ export default function AISettings() {
   // Get current AI settings
   const { data: settings, isLoading } = useQuery<{
     aiName?: string;
-    personalityDescription?: string;
-    responseStyle?: string;
+    personalityKeywords?: string;
     autoSuggestions?: boolean;
     voiceEnabled?: boolean;
     voiceId?: string;
@@ -62,10 +61,16 @@ export default function AISettings() {
 
   // Update form when settings are loaded
   if (settings && !form.formState.isDirty) {
+    let keywords: string[] = [];
+    try {
+      keywords = settings.personalityKeywords ? JSON.parse(settings.personalityKeywords) : [];
+    } catch {
+      keywords = [];
+    }
+    
     form.reset({
       aiName: settings.aiName || "AI Assistant",
-      personalityDescription: settings.personalityDescription || "",
-      responseStyle: settings.responseStyle || "professional",
+      personalityKeywords: keywords,
       autoSuggestions: settings.autoSuggestions ?? true,
       voiceEnabled: settings.voiceEnabled ?? false,
       voiceId: settings.voiceId || "alloy",
@@ -77,7 +82,10 @@ export default function AISettings() {
     mutationFn: async (data: AISettingsData) => {
       const response = await apiRequest("/api/ai-settings", {
         method: "POST",
-        body: data,
+        body: {
+          ...data,
+          personalityKeywords: JSON.stringify(data.personalityKeywords),
+        },
       });
       return response;
     },
@@ -115,13 +123,34 @@ export default function AISettings() {
   const resetToDefaults = () => {
     form.reset({
       aiName: "AI Assistant",
-      personalityDescription: "",
-      responseStyle: "professional",
+      personalityKeywords: [],
       autoSuggestions: true,
       voiceEnabled: false,
       voiceId: "alloy",
       voiceSpeed: 1.0,
     });
+    setKeywordInput("");
+  };
+
+  const addKeyword = () => {
+    const keyword = keywordInput.trim();
+    if (keyword && !form.getValues("personalityKeywords").includes(keyword)) {
+      const currentKeywords = form.getValues("personalityKeywords");
+      form.setValue("personalityKeywords", [...currentKeywords, keyword]);
+      setKeywordInput("");
+    }
+  };
+
+  const removeKeyword = (keywordToRemove: string) => {
+    const currentKeywords = form.getValues("personalityKeywords");
+    form.setValue("personalityKeywords", currentKeywords.filter(k => k !== keywordToRemove));
+  };
+
+  const handleKeywordKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addKeyword();
+    }
   };
 
   return (
@@ -182,19 +211,57 @@ export default function AISettings() {
 
                 <FormField
                   control={form.control}
-                  name="personalityDescription"
+                  name="personalityKeywords"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Personality Description (Optional)</FormLabel>
+                      <FormLabel>Personality Keywords</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="e.g., Helpful and knowledgeable business assistant with expertise in sales and customer relations..."
-                          className="min-h-[100px] resize-none"
-                          {...field}
-                        />
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Type a keyword and press Enter (e.g., professional, friendly, helpful)"
+                              value={keywordInput}
+                              onChange={(e) => setKeywordInput(e.target.value)}
+                              onKeyPress={handleKeywordKeyPress}
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={addKeyword}
+                              disabled={!keywordInput.trim()}
+                              className="shrink-0"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          
+                          {/* Display current keywords as badges */}
+                          <div className="flex flex-wrap gap-2 min-h-[2.5rem] p-3 border rounded-md bg-gray-50 dark:bg-gray-800">
+                            {field.value.length === 0 ? (
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                No keywords added yet. Try: professional, helpful, creative, technical
+                              </span>
+                            ) : (
+                              field.value.map((keyword, index) => (
+                                <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                                  {keyword}
+                                  <button
+                                    type="button"
+                                    onClick={() => removeKeyword(keyword)}
+                                    className="ml-1 hover:text-red-500"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              ))
+                            )}
+                          </div>
+                        </div>
                       </FormControl>
                       <FormDescription>
-                        Describe how you want your AI to behave and respond to users
+                        Keywords help shape how your AI assistant communicates. Examples: professional, friendly, creative, technical, concise, detailed
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -203,52 +270,18 @@ export default function AISettings() {
               </CardContent>
             </Card>
 
-            {/* Response Style */}
+            {/* Auto Suggestions */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Sparkles className="w-5 h-5 text-electric-blue" />
-                  <span>Response Style</span>
+                  <span>Chat Features</span>
                 </CardTitle>
                 <CardDescription>
-                  Choose how your AI assistant communicates with your team
+                  Configure additional features for your AI assistant
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="responseStyle"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Communication Style</FormLabel>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[
-                          { value: "professional", label: "Professional", desc: "Formal and business-focused" },
-                          { value: "casual", label: "Casual", desc: "Relaxed and conversational" },
-                          { value: "friendly", label: "Friendly", desc: "Warm and approachable" },
-                          { value: "technical", label: "Technical", desc: "Detailed and precise" },
-                        ].map((style) => (
-                          <div
-                            key={style.value}
-                            onClick={() => field.onChange(style.value)}
-                            className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                              field.value === style.value
-                                ? "border-electric-blue bg-electric-blue/5"
-                                : "border-gray-200 dark:border-gray-700 hover:border-electric-blue/50"
-                            }`}
-                          >
-                            <div className="font-medium text-sm">{style.label}</div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                              {style.desc}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <FormField
                   control={form.control}
                   name="autoSuggestions"

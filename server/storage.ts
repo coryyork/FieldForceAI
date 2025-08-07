@@ -73,7 +73,7 @@ export interface IStorage {
   
   // AI Settings operations
   getAISettings(companyId: string): Promise<SelectAISettings | undefined>;
-  upsertAISettings(companyId: string, settings: InsertAISettings): Promise<SelectAISettings>;
+  upsertAISettings(companyId: string, settings: Partial<InsertAISettings>): Promise<SelectAISettings>;
   
   // Search operations
   searchAll(companyId: string, query: string): Promise<{
@@ -393,7 +393,7 @@ export class DatabaseStorage implements IStorage {
     return settings;
   }
 
-  async upsertAISettings(companyId: string, settingsData: InsertAISettings): Promise<SelectAISettings> {
+  async upsertAISettings(companyId: string, settingsData: Partial<InsertAISettings>): Promise<SelectAISettings> {
     const [settings] = await db
       .insert(aiSettings)
       .values({

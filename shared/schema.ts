@@ -242,6 +242,29 @@ export const leadNotes = pgTable("lead_notes", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// AI Settings table for company-specific AI configuration
+export const aiSettings = pgTable("ai_settings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid("company_id").notNull().unique().references(() => companies.id),
+  aiName: varchar("ai_name").default("AI Assistant"),
+  personalityKeywords: text("personality_keywords"), // JSON array of keywords
+  autoSuggestions: boolean("auto_suggestions").default(true),
+  voiceEnabled: boolean("voice_enabled").default(false),
+  voiceId: varchar("voice_id").default("alloy"), // alloy, echo, fable, onyx, nova, shimmer
+  voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).default("1.0"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+
+
+export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
+  company: one(companies, {
+    fields: [aiSettings.companyId],
+    references: [companies.id],
+  }),
+}));
+
 export const leadNotesRelations = relations(leadNotes, ({ one }) => ({
   lead: one(leads, {
     fields: [leadNotes.leadId],
@@ -278,34 +301,11 @@ export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 
-// AI Settings table
-export const aiSettings = pgTable("ai_settings", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-  aiName: varchar("ai_name").notNull().default("AI Assistant"),
-  personalityDescription: text("personality_description"),
-  responseStyle: varchar("response_style").notNull().default("professional"),
-  autoSuggestions: boolean("auto_suggestions").notNull().default(true),
-  voiceEnabled: boolean("voice_enabled").notNull().default(false),
-  voiceId: varchar("voice_id").notNull().default("alloy"),
-  voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).notNull().default("1.0"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
-  company: one(companies, {
-    fields: [aiSettings.companyId],
-    references: [companies.id],
-  }),
-}));
-
 export const insertAISettingsSchema = createInsertSchema(aiSettings).omit({
   id: true,
-  companyId: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export type SelectAISettings = typeof aiSettings.$inferSelect;
+export type AISettings = typeof aiSettings.$inferSelect;
 export type InsertAISettings = z.infer<typeof insertAISettingsSchema>;

@@ -632,6 +632,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Settings routes
+  app.get("/api/ai-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const settings = await storage.getAISettings(user.companyId);
+      res.json(settings || {});
+    } catch (error) {
+      console.error("Error fetching AI settings:", error);
+      res.status(500).json({ message: "Failed to fetch AI settings" });
+    }
+  });
+
+  app.post("/api/ai-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const settingsData = {
+        companyId: user.companyId,
+        aiName: req.body.aiName,
+        personalityDescription: req.body.personalityDescription,
+        responseStyle: req.body.responseStyle,
+        autoSuggestions: req.body.autoSuggestions,
+        voiceEnabled: req.body.voiceEnabled,
+        voiceId: req.body.voiceId,
+        voiceSpeed: req.body.voiceSpeed,
+      };
+
+      const settings = await storage.upsertAISettings(settingsData);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error saving AI settings:", error);
+      res.status(500).json({ message: "Failed to save AI settings" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Set up WebSocket server for voice conversations
