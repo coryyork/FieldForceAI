@@ -149,12 +149,14 @@ export async function setupAuth(app: Express) {
     res.json(req.user);
   });
 
-  // GET /api/login returns login status
+  // GET /api/login - redirect authenticated users or show login page
   app.get("/api/login", (req, res) => {
-    res.json({ 
-      isAuthenticated: req.isAuthenticated(),
-      user: req.user || null 
-    });
+    if (req.isAuthenticated()) {
+      // Redirect authenticated users to the app
+      return res.redirect("/");
+    }
+    // For unauthenticated users, redirect to login page
+    res.redirect("/login");
   });
 }
 
