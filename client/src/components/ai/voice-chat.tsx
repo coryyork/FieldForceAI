@@ -110,7 +110,7 @@ export default function VoiceChat({
                   type: "server_vad",
                   threshold: 0.5,
                   prefix_padding_ms: 300,
-                  silence_duration_ms: 1200
+                  silence_duration_ms: 300  // Reduced from 1200ms for much faster response
                 },
                 modalities: ["text", "audio"]
               }
@@ -181,85 +181,27 @@ export default function VoiceChat({
         setIsListening(false);
       };
 
-      let audioBuffer: Float32Array[] = [];
-      let silenceCounter = 0;
-      const silenceThreshold = 0.01; // Reasonable threshold for voice detection
-      const bufferSize = 20; // Buffer ~1 second of audio for smoother transmission
-      
-      // Process and send audio chunks
+      // Process and send audio chunks with minimal buffering for faster response
       processorRef.current.onaudioprocess = (e) => {
         // Only process if WebSocket is ready
         if (ws.readyState === WebSocket.OPEN) {
           const inputData = e.inputBuffer.getChannelData(0);
           
-          // Check if there's actual audio content
-          let hasAudio = false;
-          let maxAmplitude = 0;
-          for (let i = 0; i < inputData.length; i++) {
-            const sample = Math.abs(inputData[i]);
-            maxAmplitude = Math.max(maxAmplitude, sample);
-            if (sample > silenceThreshold) {
-              hasAudio = true;
-              break;
-            }
-          }
-          
-          if (hasAudio) {
-            // Reset silence counter and add to buffer
-            silenceCounter = 0;
-            audioBuffer.push(new Float32Array(inputData));
-            
-            // Send when buffer is full (about 1 second)
-            if (audioBuffer.length >= bufferSize) {
-              sendBufferedAudio();
-            }
-          } else {
-            silenceCounter++;
-            
-            // If we have buffered audio and detected silence for 400ms, send it
-            if (audioBuffer.length > 0 && silenceCounter >= 20) {
-              sendBufferedAudio();
-              // Only commit if we actually sent audio
-              if (audioBuffer.length > 0) {
-                ws.send(JSON.stringify({
-                  type: "input_audio_buffer.commit"
-                }));
-              }
-            }
-          }
-        }
-        
-        function sendBufferedAudio() {
-          if (audioBuffer.length === 0) return;
-          
-          // Combine all buffered audio
-          const totalLength = audioBuffer.reduce((acc, arr) => acc + arr.length, 0);
-          const combinedBuffer = new Float32Array(totalLength);
-          let offset = 0;
-          
-          for (const chunk of audioBuffer) {
-            combinedBuffer.set(chunk, offset);
-            offset += chunk.length;
-          }
-          
-          // Convert to 16-bit PCM
-          const pcm16 = convertFloat32ToPCM16(combinedBuffer);
+          // Convert and send immediately - no buffering for real-time response
+          const pcm16 = convertFloat32ToPCM16(inputData);
           const uint8Array = new Uint8Array(pcm16.buffer);
           let binaryString = '';
           for (let i = 0; i < uint8Array.length; i++) {
             binaryString += String.fromCharCode(uint8Array[i]);
           }
           
-          // Send to server
+          // Send audio chunk directly to OpenAI for immediate processing
           ws.send(JSON.stringify({
             type: "input_audio_buffer.append",
             audio: btoa(binaryString)
           }));
-          
-          // Clear buffer and reset counter
-          audioBuffer = [];
-          silenceCounter = 0;
         }
+
       };
 
       // Connect the audio nodes
