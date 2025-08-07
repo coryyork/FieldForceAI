@@ -154,11 +154,31 @@ export default function JobPortal() {
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
-      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+      
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
+        
+        // Clear the live stream from video element
+        if (videoRef.current?.srcObject) {
+          const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+          tracks.forEach(track => track.stop());
+          videoRef.current.srcObject = null;
+        }
+        
         setApplicationData(prev => ({ ...prev, videoBlob: blob, videoUrl: url }));
+        
+        // Small delay to ensure state is updated before trying to play
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.load();
+          }
+        }, 100);
       };
 
       if (videoRef.current) {
@@ -179,20 +199,27 @@ export default function JobPortal() {
   };
 
   const stopRecording = () => {
-    if (mediaRecorder) {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
-      if (videoRef.current?.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-        tracks.forEach(track => track.stop());
-      }
       setIsRecording(false);
       setMediaRecorder(null);
     }
   };
 
   const redoRecording = () => {
+    // Clean up the previous video URL to free memory
+    if (applicationData.videoUrl) {
+      URL.revokeObjectURL(applicationData.videoUrl);
+    }
+    
     setApplicationData(prev => ({ ...prev, videoBlob: null, videoUrl: "" }));
     setCurrentQuestion(0);
+    
+    // Clear video element
+    if (videoRef.current) {
+      videoRef.current.src = "";
+      videoRef.current.load();
+    }
   };
 
   const handleFinalSubmit = async () => {
@@ -851,21 +878,20 @@ export default function JobPortal() {
                     {/* Video Recording Section */}
                     <div className="space-y-4">
                       <div className="bg-gray-900 rounded-xl overflow-hidden aspect-video relative">
-                        {!applicationData.videoUrl ? (
-                          <video
-                            ref={videoRef}
-                            autoPlay
-                            muted
-                            playsInline
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <video
-                            src={applicationData.videoUrl}
-                            controls
-                            className="w-full h-full object-cover"
-                          />
-                        )}
+                        <video
+                          ref={videoRef}
+                          autoPlay={!applicationData.videoUrl}
+                          muted={!applicationData.videoUrl}
+                          playsInline
+                          controls={!!applicationData.videoUrl}
+                          src={applicationData.videoUrl || undefined}
+                          className="w-full h-full object-cover bg-gray-900"
+                          onLoadedData={() => {
+                            if (applicationData.videoUrl && videoRef.current) {
+                              videoRef.current.currentTime = 0;
+                            }
+                          }}
+                        />
                         
                         {isRecording && (
                           <div className="absolute top-4 left-4 flex items-center space-x-2">
