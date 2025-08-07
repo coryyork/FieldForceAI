@@ -939,15 +939,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const newApplication = await storage.createJobApplication(applicationData);
       
-      // Log activity (using system/anonymous user)
-      await storage.createActivity({
-        companyId: jobOpening[0].companyId,
-        userId: 'system',
-        type: "job_application_submitted",
-        description: `New application received from ${newApplication.firstName} ${newApplication.lastName} for ${jobOpening[0].title}`,
-        entityType: "job_application",
-        entityId: newApplication.id,
-      });
+      // Skip activity logging for public applications since we don't have a user context
+      // Note: We could create a system user or handle this differently in the future
 
       res.json(newApplication);
     } catch (error) {

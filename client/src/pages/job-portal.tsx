@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Building2, MapPin, Calendar, DollarSign, Users, Clock, ArrowRight, Star, CheckCircle, Briefcase, Mail, Phone, FileText, X, User, Linkedin, Video, Play, Square, RotateCcw, Upload, ExternalLink, Settings, Camera, Mic, Loader2, Share, Copy } from "lucide-react";
 import { format } from "date-fns";
@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { apiRequest } from "@/lib/queryClient";
 
 interface PublicJobOpening {
   id: string;
@@ -35,6 +36,8 @@ interface PublicJobOpening {
 export default function JobPortal() {
   const [, navigate] = useLocation();
   const params = useParams();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Fetch public job openings
   const { data: jobOpenings = [], isLoading } = useQuery<PublicJobOpening[]>({
@@ -43,6 +46,45 @@ export default function JobPortal() {
 
   // Get company name from the first job opening (since they're all from the same company)
   const companyName = jobOpenings.length > 0 ? jobOpenings[0].companyName : "Field Force";
+
+  // Submit job application mutation
+  const submitApplicationMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("/api/public/job-applications", {
+        method: "POST",
+        body: data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Application Submitted Successfully!",
+        description: `Thank you for your comprehensive application to ${selectedJob?.title}. We'll review everything and get back to you soon.`,
+      });
+
+      // Reset everything
+      setApplicationData({
+        firstName: "",
+        lastName: "",
+        address: "",
+        phone: "",
+        email: "",
+        linkedinUrl: "",
+        linkedinConnected: false,
+        videoBlob: null,
+        videoUrl: "",
+      });
+      setApplicationStep(1);
+      setSelectedJob(null);
+      setCurrentQuestion(0);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Submission Failed",
+        description: error.message || "There was an error submitting your application. Please try again.",
+        variant: "destructive"
+      });
+    },
+  });
   
   // Handle direct job linking
   useEffect(() => {
@@ -84,7 +126,6 @@ export default function JobPortal() {
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { toast } = useToast();
 
   // Interview questions
   const interviewQuestions = [
@@ -329,35 +370,29 @@ export default function JobPortal() {
       return;
     }
 
-    try {
-      // In a real implementation, this would upload the video and submit the application
+    if (!selectedJob) {
       toast({
-        title: "Application Submitted Successfully!",
-        description: `Thank you for your comprehensive application to ${selectedJob?.title}. We'll review everything and get back to you soon.`,
-      });
-
-      // Reset everything
-      setApplicationData({
-        firstName: "",
-        lastName: "",
-        address: "",
-        phone: "",
-        email: "",
-        linkedinUrl: "",
-        linkedinConnected: false,
-        videoBlob: null,
-        videoUrl: "",
-      });
-      setApplicationStep(1);
-      setSelectedJob(null);
-      setCurrentQuestion(0);
-    } catch (error) {
-      toast({
-        title: "Submission Failed",
-        description: "There was an error submitting your application. Please try again.",
+        title: "No Job Selected",
+        description: "Please select a job to apply for.",
         variant: "destructive"
       });
+      return;
     }
+
+    // Submit the application with the collected data
+    submitApplicationMutation.mutate({
+      jobOpeningId: selectedJob.id,
+      firstName: applicationData.firstName,
+      lastName: applicationData.lastName,
+      email: applicationData.email,
+      phone: applicationData.phone,
+      address: applicationData.address,
+      linkedinUrl: applicationData.linkedinUrl || null,
+      // For now, we'll store a placeholder for video URL since we'd need file upload functionality
+      videoUrl: applicationData.videoUrl || "recorded-video-placeholder",
+      status: "submitted",
+      notes: null
+    });
   };
 
   const getEmploymentTypeBadge = (type: string) => {
