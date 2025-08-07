@@ -5,6 +5,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import AIFab from "@/components/ai/ai-fab";
+import LeadTasks from "@/components/leads/lead-tasks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -340,6 +341,9 @@ export default function LeadDetails() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Lead Tasks */}
+                <LeadTasks leadId={lead.id} />
               </div>
             </div>
           </div>

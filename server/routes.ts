@@ -414,6 +414,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Lead tasks routes
+  app.get("/api/leads/:leadId/tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const tasks = await storage.getLeadTasks(req.params.leadId, user.companyId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching lead tasks:", error);
+      res.status(500).json({ message: "Failed to fetch lead tasks" });
+    }
+  });
+
+  app.post("/api/leads/:leadId/tasks", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const taskData = insertTaskSchema.parse({
+        ...req.body,
+        leadId: req.params.leadId,
+        companyId: user.companyId,
+        createdBy: req.user.claims.sub,
+        assignedTo: req.body.assignedTo || req.user.claims.sub,
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined,
+      });
+
+      const task = await storage.createTask(taskData);
+      
+      // Log activity
+      await storage.createActivity({
+        companyId: user.companyId,
+        userId: req.user.claims.sub,
+        type: "task_created",
+        description: `Created task "${task.title}" for lead`,
+        entityType: "lead",
+        entityId: req.params.leadId,
+      });
+
+      res.json(task);
+    } catch (error) {
+      console.error("Error creating lead task:", error);
+      res.status(500).json({ message: "Failed to create lead task" });
+    }
+  });
+
   // Google Places API search for company addresses
   app.get("/api/places/search", isAuthenticated, async (req: any, res) => {
     try {

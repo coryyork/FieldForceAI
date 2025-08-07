@@ -252,6 +252,14 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(tasks.id, id), eq(tasks.companyId, companyId)));
   }
 
+  async getLeadTasks(leadId: string, companyId: string): Promise<Task[]> {
+    return await db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.leadId, leadId), eq(tasks.companyId, companyId)))
+      .orderBy(desc(tasks.createdAt));
+  }
+
   // Activity operations
   async getActivities(companyId: string, limit = 50): Promise<Activity[]> {
     const regularActivities = await db
