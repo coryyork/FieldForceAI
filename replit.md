@@ -6,6 +6,13 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 
 ## Recent Changes (August 2025)
 
+- **Multi-tenant Access Control**: Removed self-registration to enforce organization-based access control
+- **Invitation System**: Managers and owners can now invite team members via email invitations
+- **Team Management**: New dedicated UI for managing team members and pending invitations
+- **Role-based Permissions**: Enforced admin/owner-only access to team management features
+- **Secure Invitation Flow**: Token-based invitation links with 7-day expiration and one-time use
+- **Custom Authentication**: Username/password login system replacing Replit Auth
+
 - **Candidate Pipeline Stages**: Complete stage tracking system with 6 stages: Applied, 1st Round Interview, 2nd Round Interview, Offered, Accepted, Rejected
 - **Stage Management UI**: Interactive stage selector component with color-coded badges and icons for each recruitment stage
 - **Stage Filtering**: Advanced filtering in candidates list page to filter by specific stages

@@ -20,6 +20,8 @@ import Candidates from "@/pages/candidates";
 import CandidateDetails from "@/pages/candidate-details";
 import JobPortal from "@/pages/job-portal";
 import Settings from "@/pages/settings";
+import TeamPage from "@/pages/team";
+import InvitationPage from "@/pages/invitation";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -36,6 +38,7 @@ function Router() {
     <Switch>
       {/* Public routes - accessible without authentication */}
       <Route path="/auth" component={AuthPage} />
+      <Route path="/invitation/:token" component={InvitationPage} />
       <Route path="/jobs" component={JobPortal} />
       <Route path="/jobs/:jobId" component={JobPortal} />
       
@@ -51,6 +54,7 @@ function Router() {
       <ProtectedRoute path="/candidates" component={Candidates} />
       <ProtectedRoute path="/candidates/:id" component={CandidateDetails} />
       <ProtectedRoute path="/settings" component={Settings} />
+      <ProtectedRoute path="/team" component={TeamPage} />
       
       <Route component={NotFound} />
     </Switch>

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings as SettingsIcon, Brain, User, Shield, Bell } from "lucide-react";
+import { Settings as SettingsIcon, Brain, User, Shield, Bell, Users } from "lucide-react";
 import { Link } from "wouter";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
@@ -42,10 +42,22 @@ const settingsCategories = [
 ];
 
 export default function Settings() {
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
 
-  if (!isAuthenticated) {
+  if (!user) {
     return null;
+  }
+  
+  // Add team management for admin/owner users
+  const allCategories = [...settingsCategories];
+  if (user.role === 'admin' || user.role === 'owner') {
+    allCategories.unshift({
+      title: "Team Management",
+      description: "Invite and manage team members in your organization",
+      icon: Users,
+      href: "/team",
+      color: "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400",
+    });
   }
 
   return (
@@ -63,7 +75,7 @@ export default function Settings() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-              {settingsCategories.map((category) => {
+              {allCategories.map((category) => {
                 const IconComponent = category.icon;
                 
                 return (

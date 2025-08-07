@@ -9,6 +9,7 @@ import {
   aiSettings,
   jobOpenings,
   jobApplications,
+  invitations,
   type User,
   type InsertUser,
   type UpsertUser,
@@ -30,6 +31,8 @@ import {
   type InsertJobOpening,
   type JobApplication,
   type InsertJobApplication,
+  type Invitation,
+  type InsertInvitation,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -105,6 +108,13 @@ export interface IStorage {
     tasks: Task[];
     jobOpenings: JobOpening[];
   }>;
+  
+  // Invitation operations
+  getInvitations(companyId: string): Promise<Invitation[]>;
+  getInvitationByToken(token: string): Promise<Invitation | undefined>;
+  createInvitation(invitation: InsertInvitation): Promise<Invitation>;
+  updateInvitation(id: string, updates: Partial<Invitation>): Promise<Invitation>;
+  deleteInvitation(id: string, companyId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -621,6 +631,50 @@ export class DatabaseStorage implements IStorage {
       tasks: searchedTasks,
       jobOpenings: searchedJobOpenings,
     };
+  }
+
+  // Invitation operations
+  async getInvitations(companyId: string): Promise<Invitation[]> {
+    return await db
+      .select()
+      .from(invitations)
+      .where(eq(invitations.companyId, companyId))
+      .orderBy(desc(invitations.createdAt));
+  }
+
+  async getInvitationByToken(token: string): Promise<Invitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(invitations)
+      .where(eq(invitations.token, token));
+    return invitation;
+  }
+
+  async createInvitation(invitation: InsertInvitation): Promise<Invitation> {
+    const [created] = await db
+      .insert(invitations)
+      .values(invitation)
+      .returning();
+    return created;
+  }
+
+  async updateInvitation(id: string, updates: Partial<Invitation>): Promise<Invitation> {
+    const [updated] = await db
+      .update(invitations)
+      .set(updates)
+      .where(eq(invitations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteInvitation(id: string, companyId: string): Promise<void> {
+    await db
+      .delete()
+      .from(invitations)
+      .where(and(
+        eq(invitations.id, id),
+        eq(invitations.companyId, companyId)
+      ));
   }
 }
 

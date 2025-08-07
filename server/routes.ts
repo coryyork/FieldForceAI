@@ -14,7 +14,8 @@ import {
   insertJobApplicationSchema,
   jobOpenings,
   jobApplications,
-  companies
+  companies,
+  users
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -950,6 +951,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error submitting job application:", error);
       res.status(500).json({ message: "Failed to submit job application" });
+    }
+  });
+
+  // Team management routes
+  app.get("/api/team-members", isAuthenticated, async (req: any, res) => {
+    try {
+      const userCompanyId = req.user.companyId;
+      
+      // Get all users in the same company
+      const teamMembers = await db
+        .select()
+        .from(users)
+        .where(eq(users.companyId, userCompanyId))
+        .orderBy(desc(users.createdAt));
+      
+      res.json(teamMembers);
+    } catch (error) {
+      console.error("Error fetching team members:", error);
+      res.status(500).json({ message: "Failed to fetch team members" });
+    }
+  });
+
+  // Invitation management routes (for admins/managers)
+  app.get("/api/invitations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userCompanyId = req.user.companyId;
+      const userRole = req.user.role;
+      
+      // Only admins and owners can view invitations
+      if (userRole !== 'admin' && userRole !== 'owner') {
+        return res.status(403).json({ message: "Unauthorized to view invitations" });
+      }
+      
+      const invitations = await storage.getInvitations(userCompanyId);
+      res.json(invitations);
+    } catch (error) {
+      console.error("Error fetching invitations:", error);
+      res.status(500).json({ message: "Failed to fetch invitations" });
+    }
+  });
+
+  app.post("/api/invitations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userCompanyId = req.user.companyId;
+      const userRole = req.user.role;
+      
+      // Only admins and owners can send invitations
+      if (userRole !== 'admin' && userRole !== 'owner') {
+        return res.status(403).json({ message: "Unauthorized to send invitations" });
+      }
+      
+      const { email, role = 'user' } = req.body;
+      
+      // Set expiration to 7 days from now
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      
+      const invitation = await storage.createInvitation({
+        companyId: userCompanyId,
+        invitedBy: req.user.id,
+        email,
+        role,
+        expiresAt,
+      });
+      
+      // TODO: Send invitation email with the token
+      // For now, just return the invitation with token
+      
+      res.json(invitation);
+    } catch (error) {
+      console.error("Error creating invitation:", error);
+      res.status(500).json({ message: "Failed to create invitation" });
+    }
+  });
+
+  app.delete("/api/invitations/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userCompanyId = req.user.companyId;
+      const userRole = req.user.role;
+      
+      // Only admins and owners can delete invitations
+      if (userRole !== 'admin' && userRole !== 'owner') {
+        return res.status(403).json({ message: "Unauthorized to delete invitations" });
+      }
+      
+      await storage.deleteInvitation(req.params.id, userCompanyId);
+      res.json({ message: "Invitation deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting invitation:", error);
+      res.status(500).json({ message: "Failed to delete invitation" });
+    }
+  });
+
+  // Public invitation routes (no authentication required)
+  app.get("/api/invitation/:token", async (req: any, res) => {
+    try {
+      const invitation = await storage.getInvitationByToken(req.params.token);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Invalid invitation token" });
+      }
+      
+      // Check if invitation is expired
+      if (new Date(invitation.expiresAt) < new Date()) {
+        return res.status(400).json({ message: "Invitation has expired" });
+      }
+      
+      // Check if invitation was already accepted
+      if (invitation.status === 'accepted') {
+        return res.status(400).json({ message: "Invitation has already been accepted" });
+      }
+      
+      // Get company details for the invitation
+      const company = await storage.getCompany(invitation.companyId);
+      
+      res.json({
+        email: invitation.email,
+        role: invitation.role,
+        companyName: company?.name,
+      });
+    } catch (error) {
+      console.error("Error fetching invitation:", error);
+      res.status(500).json({ message: "Failed to fetch invitation" });
+    }
+  });
+
+  app.post("/api/invitation/:token/accept", async (req: any, res) => {
+    try {
+      const invitation = await storage.getInvitationByToken(req.params.token);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Invalid invitation token" });
+      }
+      
+      // Check if invitation is expired
+      if (new Date(invitation.expiresAt) < new Date()) {
+        return res.status(400).json({ message: "Invitation has expired" });
+      }
+      
+      // Check if invitation was already accepted
+      if (invitation.status === 'accepted') {
+        return res.status(400).json({ message: "Invitation has already been accepted" });
+      }
+      
+      const { username, password, firstName, lastName } = req.body;
+      
+      // Hash password
+      const { hashPassword } = await import('./auth');
+      const hashedPassword = await hashPassword(password);
+      
+      // Create user account
+      const user = await storage.createUser({
+        username,
+        email: invitation.email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        companyId: invitation.companyId,
+        role: invitation.role,
+      });
+      
+      // Mark invitation as accepted
+      await storage.updateInvitation(invitation.id, {
+        status: 'accepted',
+        acceptedAt: new Date(),
+      });
+      
+      res.json({ message: "Account created successfully", user });
+    } catch (error) {
+      console.error("Error accepting invitation:", error);
+      res.status(500).json({ message: "Failed to accept invitation" });
     }
   });
 

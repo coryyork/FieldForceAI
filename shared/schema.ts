@@ -122,6 +122,20 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// User invitations for organization access
+export const invitations = pgTable("invitations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  invitedBy: varchar("invited_by").notNull().references(() => users.id),
+  email: varchar("email").notNull(),
+  role: varchar("role").default("user"), // user, admin
+  token: varchar("token").unique().notNull().default(sql`gen_random_uuid()`),
+  status: varchar("status").default("pending"), // pending, accepted, expired
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   company: one(companies, {
@@ -398,3 +412,14 @@ export type JobOpening = typeof jobOpenings.$inferSelect;
 export type InsertJobOpening = z.infer<typeof insertJobOpeningSchema>;
 export type JobApplication = typeof jobApplications.$inferSelect;
 export type InsertJobApplication = z.infer<typeof insertJobApplicationSchema>;
+
+export const insertInvitationSchema = createInsertSchema(invitations).omit({
+  id: true,
+  token: true,
+  status: true,
+  acceptedAt: true,
+  createdAt: true,
+});
+
+export type Invitation = typeof invitations.$inferSelect;
+export type InsertInvitation = z.infer<typeof insertInvitationSchema>;
