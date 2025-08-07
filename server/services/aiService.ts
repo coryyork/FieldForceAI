@@ -16,11 +16,14 @@ export class AIService {
       console.log("Query:", query);
       console.log("Search results:", JSON.stringify(searchResults, null, 2));
       
-      // For queries about "top" or "best" leads, get all leads and let AI analyze
-      let allLeads = [];
-      if (query.toLowerCase().includes('top') || query.toLowerCase().includes('best') || query.toLowerCase().includes('high')) {
+      // For queries that need analysis rather than text search, get all leads
+      let allLeads: any[] = [];
+      const analysisKeywords = ['top', 'best', 'high', 'recent', 'latest', 'newest', 'oldest', 'biggest', 'largest', 'most', 'all', 'my leads', 'show leads'];
+      const needsAnalysis = analysisKeywords.some(keyword => query.toLowerCase().includes(keyword));
+      
+      if (needsAnalysis || searchResults.leads.length === 0) {
         allLeads = await storage.getLeads(companyId);
-        console.log("Got all leads for ranking:", allLeads.length);
+        console.log("Got all leads for analysis:", allLeads.length);
       }
       
       // Use AI to analyze and rank the results
@@ -35,18 +38,21 @@ export class AIService {
         
         ${allLeads.length > 0 ? `All Leads for Analysis: ${JSON.stringify(allLeads)}` : ''}
         
-        For queries about "top" or "best" leads, analyze ALL leads and rank them by:
-        - Lead value (higher is better)
+        IMPORTANT: If no search results were found but all leads data is available, use the all leads data for analysis.
+        
+        For queries about leads, analyze and rank them by:
+        - "recent/latest/newest": Sort by updatedAt or createdAt (most recent first)
+        - "top/best/high value": Sort by lead value (higher is better)
+        - "hot leads": Focus on leads in proposal/negotiation stages
         - Stage progression (proposal/negotiation stages are high priority)
-        - Recent activity (updatedAt)
-        - Probability of closing
+        - Recent activity and engagement
+        
+        Always prioritize showing actual lead data over saying "no results found".
         
         Provide a structured response with:
         1. A summary of what was found
         2. The most relevant results ranked by importance
         3. Suggested actions the user can take
-        
-        If the user asked for "top leads", make sure to rank all available leads by value and importance.
         
         Respond in JSON format with this structure:
         {
@@ -69,10 +75,13 @@ export class AIService {
 
       const analysis = JSON.parse(response.choices[0].message.content || "{}");
       
+      console.log("AI Analysis response:", JSON.stringify(analysis, null, 2));
+      
       return {
         query,
         analysis,
         rawResults: searchResults,
+        allLeadsCount: allLeads.length
       };
     } catch (error) {
       console.error("Error in AI search:", error);
