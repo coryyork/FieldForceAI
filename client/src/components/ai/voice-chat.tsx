@@ -239,6 +239,21 @@ export default function VoiceChat({
 
   // Disconnect from voice API
   const disconnectVoice = () => {
+    console.log("Disconnecting voice...");
+    
+    // Stop all playing audio
+    if (audioSourcesRef.current) {
+      audioSourcesRef.current.forEach(source => {
+        try {
+          source.stop();
+        } catch (e) {
+          // Source may have already stopped
+        }
+      });
+      audioSourcesRef.current.clear();
+    }
+    nextPlayTimeRef.current = 0;
+    
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
@@ -270,7 +285,11 @@ export default function VoiceChat({
     return int16Array;
   };
 
-  // Play received audio chunks
+  // Track playing audio sources to prevent overlap
+  const audioSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
+  const nextPlayTimeRef = useRef<number>(0);
+  
+  // Play received audio chunks with queueing to prevent overlap
   const playAudioChunk = async (base64Audio: string) => {
     if (!audioContextRef.current) return;
 
@@ -295,7 +314,25 @@ export default function VoiceChat({
       const source = audioContextRef.current.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioContextRef.current.destination);
-      source.start();
+      
+      // Schedule audio to play sequentially
+      const currentTime = audioContextRef.current.currentTime;
+      const playTime = Math.max(currentTime, nextPlayTimeRef.current);
+      
+      source.start(playTime);
+      nextPlayTimeRef.current = playTime + audioBuffer.duration;
+      
+      // Track and clean up sources
+      audioSourcesRef.current.add(source);
+      source.onended = () => {
+        audioSourcesRef.current.delete(source);
+        // Reset timing if no more sources
+        if (audioSourcesRef.current.size === 0) {
+          nextPlayTimeRef.current = 0;
+        }
+      };
+      
+      console.log(`Audio scheduled at ${playTime.toFixed(3)}s, duration: ${audioBuffer.duration.toFixed(3)}s`);
     } catch (error) {
       console.error("Error playing audio:", error);
     }
@@ -305,16 +342,18 @@ export default function VoiceChat({
   useEffect(() => {
     console.log("Voice effect triggered - isEnabled:", isEnabled, "isConnected:", isConnected);
     
-    if (isEnabled) {
+    if (isEnabled && !isConnected) {
       console.log("Auto-connecting to voice...");
       connectToVoiceAPI();
-    } else {
+    } else if (!isEnabled && isConnected) {
       console.log("Auto-disconnecting voice...");
       disconnectVoice();
     }
     
     return () => {
-      disconnectVoice();
+      if (isConnected) {
+        disconnectVoice();
+      }
     };
   }, [isEnabled]);
   
