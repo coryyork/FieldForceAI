@@ -19,6 +19,7 @@ import Candidates from "@/pages/candidates";
 import CandidateDetails from "@/pages/candidate-details";
 import JobPortal from "@/pages/job-portal";
 import Settings from "@/pages/settings";
+import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -50,6 +51,7 @@ function Router() {
           <Route path="/candidates" component={Candidates} />
           <Route path="/candidates/:id" component={CandidateDetails} />
           <Route path="/settings" component={Settings} />
+          <Route path="/login" component={LoginPage} />
         </>
       )}
       <Route component={NotFound} />

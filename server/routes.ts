@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { db } from "./db";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupMultiAuth } from "./auth";
+import { isAuthenticated } from "./replitAuth";
 import { aiService } from "./services/aiService";
 import { 
   insertLeadSchema, 
@@ -20,7 +21,7 @@ import { eq, and, desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  await setupMultiAuth(app);
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
