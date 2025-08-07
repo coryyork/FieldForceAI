@@ -95,14 +95,19 @@ export default function VoiceChat({
               type: "session.update",
               session: {
                 voice: aiSettings?.voiceId || "alloy",
-                instructions: aiSettings?.personalityKeywords ? (() => {
-                  try {
-                    const keywords = JSON.parse(aiSettings.personalityKeywords);
-                    return `You are a helpful AI assistant for a business management platform called Field Force 2. Your personality traits: ${keywords.join(", ")}. Help users with their leads, tasks, documents, and business questions. Always respond in English regardless of the input language.`;
-                  } catch {
-                    return "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions. Always respond in English regardless of the input language.";
+                instructions: (() => {
+                  const name = aiSettings?.aiName || "Field Force Assistant";
+                  let personality = "";
+                  if (aiSettings?.personalityKeywords) {
+                    try {
+                      const keywords = JSON.parse(aiSettings.personalityKeywords);
+                      personality = `Your personality traits: ${keywords.join(", ")}. `;
+                    } catch {
+                      // Invalid JSON, ignore
+                    }
                   }
-                })() : "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions. Always respond in English regardless of the input language.",
+                  return `Your name is ${name}. You are an AI assistant for a business management platform called Field Force 2. ${personality}Help users with their leads, tasks, documents, and business questions. When asked for your name, always respond with "${name}". Always respond in English regardless of the input language.`;
+                })(),
                 input_audio_format: "pcm16",
                 output_audio_format: "pcm16",
                 input_audio_transcription: { model: "whisper-1" },
