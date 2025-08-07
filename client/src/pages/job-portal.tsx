@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, MapPin, Calendar, DollarSign, Users, Clock, ArrowRight, Star, CheckCircle, Briefcase, Mail, Phone, FileText, X, User, Linkedin, Video, Play, Square, RotateCcw, Upload, ExternalLink } from "lucide-react";
+import { Building2, MapPin, Calendar, DollarSign, Users, Clock, ArrowRight, Star, CheckCircle, Briefcase, Mail, Phone, FileText, X, User, Linkedin, Video, Play, Square, RotateCcw, Upload, ExternalLink, Settings, Camera, Mic, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,6 +60,13 @@ export default function JobPortal() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [linkedinConnecting, setLinkedinConnecting] = useState(false);
+  const [availableDevices, setAvailableDevices] = useState<{
+    videoDevices: MediaDeviceInfo[];
+    audioDevices: MediaDeviceInfo[];
+  }>({ videoDevices: [], audioDevices: [] });
+  const [selectedVideoDevice, setSelectedVideoDevice] = useState<string>("");
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>("");
+  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
@@ -87,6 +94,40 @@ export default function JobPortal() {
   // Get unique departments and locations for filters
   const departments = Array.from(new Set(jobOpenings.map(job => job.department).filter(Boolean))) as string[];
   const locations = Array.from(new Set(jobOpenings.map(job => job.location).filter(Boolean))) as string[];
+
+  // Enumerate media devices
+  const enumerateDevices = async () => {
+    try {
+      // Request permissions first
+      await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      const audioDevices = devices.filter(device => device.kind === 'audioinput');
+      
+      setAvailableDevices({ videoDevices, audioDevices });
+      
+      // Set default devices if none selected
+      if (!selectedVideoDevice && videoDevices.length > 0) {
+        setSelectedVideoDevice(videoDevices[0].deviceId);
+      }
+      if (!selectedAudioDevice && audioDevices.length > 0) {
+        setSelectedAudioDevice(audioDevices[0].deviceId);
+      }
+    } catch (error) {
+      console.error('Failed to enumerate devices:', error);
+      toast({
+        title: "Device Access Error",
+        description: "Unable to access camera and microphone. Please check permissions.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Initialize devices on component mount
+  React.useEffect(() => {
+    enumerateDevices();
+  }, []);
 
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +191,12 @@ export default function JobPortal() {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const constraints: MediaStreamConstraints = {
+        video: selectedVideoDevice ? { deviceId: { exact: selectedVideoDevice } } : true,
+        audio: selectedAudioDevice ? { deviceId: { exact: selectedAudioDevice } } : true
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
@@ -190,9 +236,45 @@ export default function JobPortal() {
       setIsRecording(true);
       setCurrentQuestion(0);
     } catch (error) {
+      console.error('Recording start failed:', error);
       toast({
-        title: "Camera Access Denied",
-        description: "Please allow camera and microphone access to record your video.",
+        title: "Camera Access Error",
+        description: "Unable to access the selected camera or microphone. Please check device selection and permissions.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const testDevices = async () => {
+    try {
+      const constraints: MediaStreamConstraints = {
+        video: selectedVideoDevice ? { deviceId: { exact: selectedVideoDevice } } : true,
+        audio: selectedAudioDevice ? { deviceId: { exact: selectedAudioDevice } } : true
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      
+      // Stop the test stream after a moment
+      setTimeout(() => {
+        if (videoRef.current?.srcObject) {
+          const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+          tracks.forEach(track => track.stop());
+        }
+      }, 3000);
+
+      toast({
+        title: "Device Test Successful",
+        description: "Camera and microphone are working with selected devices.",
+      });
+    } catch (error) {
+      console.error('Device test failed:', error);
+      toast({
+        title: "Device Test Failed",
+        description: "Unable to access the selected devices. Please try different devices.",
         variant: "destructive"
       });
     }
@@ -901,11 +983,103 @@ export default function JobPortal() {
                         )}
                       </div>
 
+                      {/* Device Settings */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Camera & Microphone Settings</h4>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowDeviceSettings(!showDeviceSettings)}
+                          >
+                            <Settings className="w-4 h-4 mr-2" />
+                            {showDeviceSettings ? "Hide" : "Settings"}
+                          </Button>
+                        </div>
+
+                        {showDeviceSettings && (
+                          <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {/* Camera Selection */}
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center">
+                                  <Camera className="w-4 h-4 mr-2" />
+                                  Camera
+                                </Label>
+                                <Select 
+                                  value={selectedVideoDevice} 
+                                  onValueChange={setSelectedVideoDevice}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select camera" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableDevices.videoDevices.map(device => (
+                                      <SelectItem key={device.deviceId} value={device.deviceId}>
+                                        {device.label || `Camera ${device.deviceId.slice(0, 8)}...`}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Microphone Selection */}
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center">
+                                  <Mic className="w-4 h-4 mr-2" />
+                                  Microphone
+                                </Label>
+                                <Select 
+                                  value={selectedAudioDevice} 
+                                  onValueChange={setSelectedAudioDevice}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select microphone" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableDevices.audioDevices.map(device => (
+                                      <SelectItem key={device.deviceId} value={device.deviceId}>
+                                        {device.label || `Microphone ${device.deviceId.slice(0, 8)}...`}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={testDevices}
+                                disabled={!selectedVideoDevice || !selectedAudioDevice}
+                              >
+                                <Video className="w-4 h-4 mr-2" />
+                                Test Devices
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline" 
+                                size="sm"
+                                onClick={enumerateDevices}
+                              >
+                                <Loader2 className="w-4 h-4 mr-2" />
+                                Refresh Devices
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Recording Controls */}
                       <div className="flex flex-wrap gap-2">
                         {!isRecording && !applicationData.videoUrl && (
                           <Button
                             type="button"
                             onClick={startRecording}
+                            disabled={!selectedVideoDevice || !selectedAudioDevice}
                             className="bg-red-600 hover:bg-red-700 text-white"
                           >
                             <Video className="w-4 h-4 mr-2" />
