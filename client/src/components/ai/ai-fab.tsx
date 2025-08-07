@@ -22,11 +22,19 @@ export default function AIFab() {
 
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
-      return await apiRequest(`/api/ai/search`, {
+      const response = await fetch('/api/ai/search', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ query }),
-        headers: { 'Content-Type': 'application/json' }
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
     },
     onSuccess: (data, query) => {
       // Add user message
@@ -46,6 +54,17 @@ export default function AIFab() {
       };
 
       setMessages(prev => [...prev, userMessage, assistantMessage]);
+    },
+    onError: (error) => {
+      console.error('AI search error:', error);
+      // Add error message to chat
+      const errorMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
+        type: 'assistant',
+        content: `Sorry, I encountered an error: ${error.message}. Please try again.`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
     }
   });
 
