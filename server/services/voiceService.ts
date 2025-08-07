@@ -28,9 +28,12 @@ export function handleVoiceWebSocket(ws: WebSocket, request: IncomingMessage, us
   };
   
   activeSessions.set(sessionId, session);
+  
+  // Queue for messages received before OpenAI connection is ready
+  const messageQueue: any[] = [];
 
   // Connect to OpenAI Realtime API
-  connectToOpenAI(session);
+  connectToOpenAI(session, messageQueue);
 
   // Handle client messages
   ws.on('message', (message: string) => {
@@ -45,9 +48,11 @@ export function handleVoiceWebSocket(ws: WebSocket, request: IncomingMessage, us
       
       if (session.openaiWs && session.openaiWs.readyState === WebSocket.OPEN) {
         // Forward message to OpenAI
+        console.log('Forwarding message to OpenAI:', data.type);
         session.openaiWs.send(JSON.stringify(data));
       } else {
         console.log('OpenAI connection not ready, queueing message:', data.type);
+        messageQueue.push(data);
       }
     } catch (error) {
       console.error('Error handling client message:', error);
@@ -75,7 +80,7 @@ export function handleVoiceWebSocket(ws: WebSocket, request: IncomingMessage, us
   });
 }
 
-function connectToOpenAI(session: VoiceSession) {
+function connectToOpenAI(session: VoiceSession, messageQueue: any[]) {
   if (!OPENAI_API_KEY) {
     session.clientWs.send(JSON.stringify({
       type: 'error',
@@ -98,6 +103,19 @@ function connectToOpenAI(session: VoiceSession) {
     openaiWs.on('open', () => {
       console.log('Connected to OpenAI Realtime API');
       
+      // Process any queued messages
+      if (messageQueue.length > 0) {
+        console.log(`Processing ${messageQueue.length} queued messages`);
+        messageQueue.forEach(data => {
+          console.log('Sending queued message to OpenAI:', data.type);
+          if (data.type === 'session.update') {
+            console.log('Session update details:', JSON.stringify(data.session, null, 2));
+          }
+          openaiWs.send(JSON.stringify(data));
+        });
+        messageQueue.length = 0; // Clear the queue
+      }
+      
       // Notify client of successful connection
       session.clientWs.send(JSON.stringify({
         type: 'connection',
@@ -114,6 +132,14 @@ function connectToOpenAI(session: VoiceSession) {
         // Handle different message types from OpenAI
         if (parsedMessage.type === 'session.created') {
           console.log('OpenAI session created:', parsedMessage.session);
+        } else if (parsedMessage.type === 'session.updated') {
+          console.log('OpenAI session updated successfully');
+        } else if (parsedMessage.type === 'input_audio_buffer.speech_started') {
+          console.log('Speech detected by OpenAI');
+        } else if (parsedMessage.type === 'input_audio_buffer.speech_stopped') {
+          console.log('Speech stopped, OpenAI processing...');
+        } else if (parsedMessage.type === 'input_audio_buffer.committed') {
+          console.log('Audio buffer committed');
         } else if (parsedMessage.type === 'conversation.item.created') {
           // Forward transcripts and responses
           session.clientWs.send(JSON.stringify({

@@ -192,6 +192,10 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
                 type: "input_audio_buffer.append",
                 audio: btoa(binaryString)
               }));
+              // Log only once every few chunks to avoid spam
+              if (Math.random() < 0.01) {
+                console.log("Sending audio chunk, amplitude:", amplitude.toFixed(3));
+              }
             } catch (error) {
               console.error("Error sending audio:", error);
             }
