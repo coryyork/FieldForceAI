@@ -17,7 +17,6 @@ import { z } from "zod";
 const leadFormSchema = insertLeadSchema.omit({ companyId: true }).extend({
   value: z.string().transform((val) => val === '' ? '0' : val),
   probability: z.string().transform((val) => val === '' ? '0' : val),
-  leadScore: z.string().transform((val) => val === '' ? '0' : val),
 }).transform(data => ({
   ...data,
   name: data.name || "",
@@ -69,7 +68,6 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
       stage: initialData?.stage || "new",
       value: initialData?.value?.toString() || "0",
       probability: initialData?.probability?.toString() || "0",
-      leadScore: initialData?.leadScore?.toString() || "0",
       notes: initialData?.notes || "",
       street: initialData?.street || "",
       city: initialData?.city || "",
@@ -90,7 +88,6 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
         companyId: user?.companyId,
         value: data.value, // Keep as string for decimal field
         probability: parseInt(data.probability) || 0, // Convert to number for integer field
-        leadScore: parseInt(data.leadScore) || 0, // Convert to number for integer field
       };
       
       console.log("=== SENDING TO BACKEND ===");
@@ -404,20 +401,6 @@ export default function LeadForm({ onSuccess, initialData, leadId }: LeadFormPro
                 <FormLabel>Probability (%)</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="50" min="0" max="100" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="leadScore"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Lead Score (0-100)</FormLabel>
-                <FormControl>
-                  <Input type="number" min="0" max="100" placeholder="0" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

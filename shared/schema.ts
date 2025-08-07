@@ -64,7 +64,6 @@ export const leads = pgTable("leads", {
   stage: varchar("stage").notNull().default("new"), // new, qualified, proposal, negotiation, closed_won, closed_lost
   value: decimal("value", { precision: 12, scale: 2 }),
   probability: integer("probability").default(0), // 0-100
-  leadScore: integer("lead_score").default(0), // 0-100 lead quality score
   notes: text("notes"),
   // Address fields
   street: varchar("street"),

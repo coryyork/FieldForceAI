@@ -142,82 +142,55 @@ export default function LeadDetails() {
       </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto p-6 lg:p-8">
+        <main className="flex-1 overflow-auto app-container py-6 safe-area-bottom">
+          <div className="max-w-7xl mx-auto space-y-6">
             {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-4">
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => setLocation("/sales")}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  >
-                    <ArrowLeft className="w-5 h-5" />
-                  </Button>
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{lead.name}</h1>
-                    <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-400">
-                      <span className="flex items-center">
-                        <Building className="w-4 h-4 mr-1" />
-                        {lead.company || "No Company"}
-                      </span>
-                      <Badge 
-                        variant="outline" 
-                        className={`${
-                          lead.stage === 'closed_won' 
-                            ? 'border-green-200 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-300 dark:bg-green-900/20'
-                            : lead.stage === 'closed_lost'
-                            ? 'border-red-200 text-red-700 bg-red-50 dark:border-red-800 dark:text-red-300 dark:bg-red-900/20'
-                            : 'border-blue-200 text-blue-700 bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:bg-blue-900/20'
-                        }`}
-                      >
-                        {lead.stage.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                      </Badge>
-                      {lead.value && (
-                        <span className="flex items-center font-semibold text-green-600">
-                          <DollarSign className="w-4 h-4 mr-1" />
-                          ${parseFloat(lead.value).toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+            <div className="flex flex-col space-y-4 sm:space-y-0">
+              <div className="flex items-center space-x-4">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setLocation("/sales")}
+                  className="app-button app-button-secondary touch-target"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Sales
+                </Button>
+                <div className="flex-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{lead.name}</h1>
+                  <p className="text-gray-600 dark:text-gray-400">{lead.company}</p>
                 </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Button 
-                    onClick={() => setIsEditOpen(true)} 
-                    variant="outline"
-                    className="border-gray-300 hover:border-gray-400"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button 
-                    onClick={() => deleteLeadMutation.mutate()} 
-                    variant="destructive"
-                    disabled={deleteLeadMutation.isPending}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
-                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => setIsEditOpen(true)} variant="outline" className="app-button app-button-secondary">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+                <Button 
+                  onClick={() => deleteLeadMutation.mutate()} 
+                  variant="destructive"
+                  disabled={deleteLeadMutation.isPending}
+                  className="app-button"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
               {/* Main Content Area - Contact Info and Notes Timeline */}
               <div className="lg:col-span-3 space-y-6">
                 {/* Contact Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
+                <div className="app-card">
+                  <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                       <User className="w-5 h-5 mr-2" />
                       Contact Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div>
                         <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</label>
                         <p className="text-gray-900 dark:text-white">{lead.name}</p>
@@ -268,41 +241,23 @@ export default function LeadDetails() {
                         <p className="text-gray-900 dark:text-white">{lead.source || "N/A"}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Lead Score</label>
-                        <div className="flex items-center mt-1">
-                          <span className="text-gray-900 dark:text-white font-semibold mr-2">
-                            {lead.leadScore || 0}/100
-                          </span>
-                          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all duration-300 ${
-                                (lead.leadScore || 0) >= 80 ? 'bg-green-500' :
-                                (lead.leadScore || 0) >= 60 ? 'bg-yellow-500' :
-                                (lead.leadScore || 0) >= 40 ? 'bg-orange-500' : 'bg-red-500'
-                              }`}
-                              style={{ width: `${lead.leadScore || 0}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div>
                         <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned To</label>
                         <p className="text-gray-900 dark:text-white">{lead.assignedUserId || "Unassigned"}</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
                 {/* Lead Notes */}
                 {lead.notes && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Notes</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                  <div className="app-card">
+                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notes</h3>
+                    </div>
+                    <div className="p-6">
                       <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{lead.notes}</p>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 )}
 
                 {/* Notes Timeline */}
@@ -311,65 +266,6 @@ export default function LeadDetails() {
 
               {/* Right Sidebar */}
               <div className="lg:col-span-1 space-y-6">
-                {/* Lead Details */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <TrendingUp className="w-5 h-5 mr-2" />
-                      Lead Details
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Stage</label>
-                      <Badge 
-                        variant="outline" 
-                        className={`block mt-1 w-fit ${
-                          lead.stage === 'closed_won' 
-                            ? 'border-green-200 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-300 dark:bg-green-900/20'
-                            : lead.stage === 'closed_lost'
-                            ? 'border-red-200 text-red-700 bg-red-50 dark:border-red-800 dark:text-red-300 dark:bg-red-900/20'
-                            : 'border-blue-200 text-blue-700 bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:bg-blue-900/20'
-                        }`}
-                      >
-                        {lead.stage.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                      </Badge>
-                    </div>
-                    {lead.value && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Value</label>
-                        <p className="text-lg font-semibold text-green-600 mt-1">
-                          ${parseFloat(lead.value).toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                    {lead.probability !== null && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Probability</label>
-                        <p className="text-gray-900 dark:text-white mt-1">{lead.probability || 0}%</p>
-                      </div>
-                    )}
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Lead Score</label>
-                      <div className="flex items-center mt-2">
-                        <span className="text-lg font-semibold mr-3 min-w-[60px]">
-                          {lead.leadScore || 0}/100
-                        </span>
-                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                          <div 
-                            className={`h-3 rounded-full transition-all duration-300 ${
-                              (lead.leadScore || 0) >= 80 ? 'bg-green-500' :
-                              (lead.leadScore || 0) >= 60 ? 'bg-yellow-500' :
-                              (lead.leadScore || 0) >= 40 ? 'bg-orange-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${lead.leadScore || 0}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
                 {/* Quick Actions */}
                 <Card>
                   <CardHeader>
@@ -378,24 +274,21 @@ export default function LeadDetails() {
                       Quick Actions
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-4">
                     <Button 
-                      onClick={() => window.open(`mailto:${lead.email}`)} 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      disabled={!lead.email}
+                      className="w-full bg-electric-blue hover:bg-blue-600 text-white touch-target"
+                      onClick={() => window.open('https://webware.io/demo', '_blank')}
                     >
-                      <Mail className="w-4 h-4 mr-2" />
-                      Send Email
+                      Book a Webware Demo
                     </Button>
                     <Button 
-                      onClick={() => window.open(`tel:${lead.phone}`)} 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      disabled={!lead.phone}
+                      className="w-full bg-orange-600 hover:bg-orange-700 text-white touch-target"
+                      onClick={() => {
+                        // Process new AT&T deal logic here
+                        console.log('Processing new AT&T deal for lead:', lead.id);
+                      }}
                     >
-                      <Phone className="w-4 h-4 mr-2" />
-                      Call Lead
+                      Process New AT&T Deal
                     </Button>
                   </CardContent>
                 </Card>
@@ -433,25 +326,17 @@ export default function LeadDetails() {
                       Timeline
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-2">
                     <div>
                       <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Created</label>
-                      <p className="text-gray-900 dark:text-white text-sm">
-                        {new Date(lead.createdAt).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
+                      <p className="text-gray-900 dark:text-white">
+                        {new Date(lead.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</label>
-                      <p className="text-gray-900 dark:text-white text-sm">
-                        {new Date(lead.updatedAt).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
+                      <p className="text-gray-900 dark:text-white">
+                        {new Date(lead.updatedAt).toLocaleDateString()}
                       </p>
                     </div>
                   </CardContent>
