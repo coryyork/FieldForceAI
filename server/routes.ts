@@ -92,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead routes
   app.get("/api/leads", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.id);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -107,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/leads/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.id);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -126,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/leads", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -134,7 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const leadData = insertLeadSchema.parse({
         ...req.body,
         companyId: user.companyId,
-        assignedUserId: req.user.claims.sub,
+        assignedUserId: user.id,
       });
       
       const lead = await storage.createLead(leadData);
@@ -142,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: user.id,
         type: "lead_created",
         description: `Created new lead: ${lead.name}`,
         entityType: "lead",
@@ -158,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/leads/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -169,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: user.id,
         type: "lead_updated",
         description: `Updated lead: ${lead.name}`,
         entityType: "lead",
@@ -185,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/leads/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -200,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: user.id,
         type: "lead_deleted",
         description: `Deleted lead: ${lead.name}`,
         entityType: "lead",
@@ -217,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Document routes
   app.get("/api/documents", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -232,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/documents", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -240,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documentData = insertDocumentSchema.parse({
         ...req.body,
         companyId: user.companyId,
-        uploadedBy: req.user.claims.sub,
+        uploadedBy: user.id,
       });
       
       const document = await storage.createDocument(documentData);
@@ -248,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: user.id,
         type: "document_uploaded",
         description: `Uploaded document: ${document.title}`,
         entityType: "document",
@@ -265,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task routes
   app.get("/api/tasks", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -280,7 +280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tasks", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -288,8 +288,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const taskData = insertTaskSchema.parse({
         ...req.body,
         companyId: user.companyId,
-        createdBy: req.user.claims.sub,
-        assignedTo: req.body.assignedTo || req.user.claims.sub,
+        createdBy: user.id,
+        assignedTo: req.body.assignedTo || user.id,
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined,
       });
       
@@ -298,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: req.user.id,
         type: "task_created",
         description: `Created task: ${task.title}`,
         entityType: "task",
@@ -314,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/tasks/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -325,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: req.user.id,
         type: "task_updated",
         description: `Updated task: ${task.title}`,
         entityType: "task",
@@ -342,7 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity routes
   app.get("/api/activities", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -358,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead notes routes
   app.get("/api/leads/:leadId/notes", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -373,7 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/leads/:leadId/notes", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -381,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const noteData = {
         leadId: req.params.leadId,
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: req.user.id,
         content: req.body.content,
         type: req.body.type || "note",
       };
@@ -391,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: req.user.id,
         type: "note_created",
         description: `Added ${noteData.type} to lead`,
         entityType: "lead",
@@ -407,7 +407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/leads/:leadId/notes/:noteId", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -427,7 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/leads/:leadId/notes/:noteId", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -443,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead tasks routes
   app.get("/api/leads/:leadId/tasks", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -458,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/leads/:leadId/tasks", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -467,8 +467,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         leadId: req.params.leadId,
         companyId: user.companyId,
-        createdBy: req.user.claims.sub,
-        assignedTo: req.body.assignedTo || req.user.claims.sub,
+        createdBy: req.user.id,
+        assignedTo: req.body.assignedTo || req.user.id,
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined,
       });
 
@@ -477,7 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: req.user.id,
         type: "task_created",
         description: `Created task "${task.title}" for lead`,
         entityType: "lead",
@@ -604,7 +604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI search routes
   app.post("/api/ai/search", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -624,7 +624,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/ai/chat", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -645,7 +645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Settings routes
   app.get("/api/ai-settings", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -660,7 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/ai-settings", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -685,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Job Opening routes
   app.get("/api/job-openings", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -700,7 +700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/job-openings/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -718,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/job-openings", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -726,7 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const jobOpeningData = insertJobOpeningSchema.parse({
         ...req.body,
         companyId: user.companyId,
-        createdBy: req.user.claims.sub,
+        createdBy: req.user.id,
         applicationDeadline: req.body.applicationDeadline ? new Date(req.body.applicationDeadline) : undefined,
       });
 
@@ -735,7 +735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: req.user.id,
         type: "job_opening_created",
         description: `Created job opening "${jobOpening.title}"`,
         entityType: "job_opening",
@@ -751,7 +751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/job-openings/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -768,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: req.user.id,
         type: "job_opening_updated",
         description: `Updated job opening "${jobOpening.title}"`,
         entityType: "job_opening",
@@ -784,7 +784,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/job-openings/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -800,7 +800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: req.user.id,
         type: "job_opening_deleted",
         description: `Deleted job opening "${jobOpening.title}"`,
         entityType: "job_opening",
@@ -817,7 +817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Job Applications routes
   app.get("/api/job-applications", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -832,7 +832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/job-applications/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -850,7 +850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/job-applications/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user?.companyId) {
         return res.status(400).json({ message: "User not associated with a company" });
       }
@@ -870,7 +870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       await storage.createActivity({
         companyId: user.companyId,
-        userId: req.user.claims.sub,
+        userId: req.user.id,
         type: "job_application_updated",
         description: `Updated application from ${updatedApplication.firstName} ${updatedApplication.lastName}`,
         entityType: "job_application",
