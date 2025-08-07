@@ -72,8 +72,18 @@ export default function AIFab() {
     const { analysis } = data;
     let response = analysis.summary;
 
+    if (analysis.relevantResults?.documents?.length > 0) {
+      response += "\n\n📄 Documents:\n";
+      analysis.relevantResults.documents.forEach((doc: any) => {
+        const fileTypeDisplay = doc.fileType === 'application/pdf' ? 'PDF' : 
+                               doc.fileType === 'text/plain' ? 'Text' : 
+                               doc.fileType || 'Document';
+        response += `• ${doc.title} (${fileTypeDisplay})\n`;
+      });
+    }
+
     if (analysis.relevantResults?.leads?.length > 0) {
-      response += "\n\nLeads Found:\n";
+      response += "\n\n👥 Leads:\n";
       analysis.relevantResults.leads.forEach((lead: any) => {
         const location = lead.city && lead.state ? ` (${lead.city}, ${lead.state})` : 
                         lead.location ? ` (${lead.location})` : '';
@@ -82,21 +92,16 @@ export default function AIFab() {
     }
 
     if (analysis.relevantResults?.tasks?.length > 0) {
-      response += "\nTasks Found:\n";
+      response += "\n\n✅ Tasks:\n";
       analysis.relevantResults.tasks.forEach((task: any) => {
-        response += `• ${task.title} - ${task.status}\n`;
-      });
-    }
-
-    if (analysis.relevantResults?.documents?.length > 0) {
-      response += "\nDocuments Found:\n";
-      analysis.relevantResults.documents.forEach((doc: any) => {
-        response += `• ${doc.title}\n`;
+        const priorityIcon = task.priority === 'high' ? '🔴' : 
+                           task.priority === 'medium' ? '🟡' : '🟢';
+        response += `• ${task.title} - ${task.status} ${priorityIcon}\n`;
       });
     }
 
     if (analysis.suggestedActions?.length > 0) {
-      response += "\nWhat you can do next:\n";
+      response += "\n\n💡 Suggestions:\n";
       analysis.suggestedActions.slice(0, 3).forEach((action: string) => {
         response += `• ${action}\n`;
       });
@@ -191,10 +196,10 @@ export default function AIFab() {
                             <Bot className="w-4 h-4 text-electric-blue" />
                           )}
                         </div>
-                        <div className={`rounded-lg p-3 ${
+                        <div className={`rounded-lg p-3 shadow-sm ${
                           message.type === 'user'
                             ? 'bg-electric-blue text-white ml-2'
-                            : 'bg-gray-100 dark:bg-gray-800 mr-2'
+                            : 'bg-white dark:bg-gray-800 mr-2 border border-gray-200 dark:border-gray-700'
                         }`}>
                           <div className="text-sm whitespace-pre-line leading-relaxed">
                             {message.content}
@@ -217,10 +222,10 @@ export default function AIFab() {
                         <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                           <Bot className="w-4 h-4 text-electric-blue" />
                         </div>
-                        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                           <div className="flex items-center space-x-2">
                             <Loader2 className="w-4 h-4 animate-spin text-electric-blue" />
-                            <span className="text-sm">Thinking...</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Searching your business data...</span>
                           </div>
                         </div>
                       </div>
