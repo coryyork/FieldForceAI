@@ -6,10 +6,11 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 
 ## Recent Changes (August 2025)
 
-- **Voice Conversations**: Integrated OpenAI Realtime API for life-like AI voice interactions
+- **Voice Conversations**: Integrated OpenAI Realtime API directly into main chat widget with toggle switch
 - **AI Settings Page**: Customizable AI assistant with name, personality, response style, and voice selection
 - **Voice Options**: Support for all 6 OpenAI voices (Alloy, Echo, Fable, Onyx, Nova, Shimmer)
-- **Voice Controls**: Adjustable voice speed, mute/unmute, and WebSocket-based real-time communication
+- **Seamless Voice Integration**: Voice toggle in chat header enables simultaneous text and voice interaction
+- **Voice Controls**: Real-time mute/unmute controls and visual connection status in chat interface
 - **Navigation Restructure**: Knowledge Base now appears as submenu under AI Assistant
 - **Multi-tenant Architecture**: Complete company workspace system with automatic onboarding flow
 - **Dynamic Branding**: Header displays "My [Organization Name]" based on user's company

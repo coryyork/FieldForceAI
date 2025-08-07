@@ -7,7 +7,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, MessageCircle, X, User, Loader2, Mic } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import AISearchBar from "./ai-search-bar";
-import VoiceChat from "./voice-chat";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 
 interface ChatMessage {
   id: string;
@@ -18,9 +20,28 @@ interface ChatMessage {
 
 export default function AIFab() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+  const [isVoiceConnected, setIsVoiceConnected] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  // Voice connection refs
+  const wsRef = useRef<WebSocket | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+
+  // Get AI settings for voice configuration
+  const { data: aiSettings } = useQuery<{
+    voiceEnabled?: boolean;
+    voiceId?: string;
+    personalityDescription?: string;
+  }>({
+    queryKey: ["/api/ai-settings"],
+    retry: false,
+  });
 
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
@@ -131,6 +152,185 @@ export default function AIFab() {
     setMessages([]);
   };
 
+  // Voice connection functions
+  const connectVoice = async () => {
+    if (isVoiceConnected) return;
+
+    try {
+      // Request microphone permission
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+      mediaStreamRef.current = stream;
+
+      // Initialize audio context
+      audioContextRef.current = new AudioContext({ sampleRate: 24000 });
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+
+      // Connect to WebSocket
+      const ws = new WebSocket(`wss://${window.location.host}/api/voice/connect`);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        setIsVoiceConnected(true);
+        
+        // Send session configuration
+        ws.send(JSON.stringify({
+          type: "session.update",
+          session: {
+            voice: aiSettings?.voiceId || "alloy",
+            instructions: aiSettings?.personalityDescription || "You are a helpful AI assistant for Field Force 2.",
+            input_audio_format: "pcm16",
+            output_audio_format: "pcm16",
+            turn_detection: {
+              type: "server_vad",
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 800
+            },
+            modalities: ["text", "audio"]
+          }
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === "audio") {
+          playAudioChunk(data.audio);
+        } else if (data.type === "transcript" || data.type === "transcript_delta") {
+          console.log("AI:", data.text);
+        }
+      };
+
+      ws.onerror = () => {
+        toast({
+          title: "Voice Connection Failed",
+          description: "Could not connect to voice service",
+          variant: "destructive",
+        });
+      };
+
+      ws.onclose = () => {
+        setIsVoiceConnected(false);
+      };
+
+      // Process audio
+      processorRef.current.onaudioprocess = (e) => {
+        if (!isMuted && isVoiceConnected && ws.readyState === WebSocket.OPEN) {
+          const inputData = e.inputBuffer.getChannelData(0);
+          
+          // Check for audio content
+          let hasAudio = false;
+          for (let i = 0; i < inputData.length; i++) {
+            if (Math.abs(inputData[i]) > 0.01) {
+              hasAudio = true;
+              break;
+            }
+          }
+
+          if (hasAudio) {
+            const pcm16 = convertFloat32ToPCM16(inputData);
+            const uint8Array = new Uint8Array(pcm16.buffer);
+            let binaryString = '';
+            for (let i = 0; i < uint8Array.length; i++) {
+              binaryString += String.fromCharCode(uint8Array[i]);
+            }
+
+            ws.send(JSON.stringify({
+              type: "input_audio_buffer.append",
+              audio: btoa(binaryString)
+            }));
+          }
+        }
+      };
+
+      source.connect(processorRef.current);
+      processorRef.current.connect(audioContextRef.current.destination);
+
+    } catch (error) {
+      console.error("Voice connection failed:", error);
+      toast({
+        title: "Microphone Access Denied",
+        description: "Please allow microphone access to use voice chat",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const disconnectVoice = () => {
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+    }
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
+    setIsVoiceConnected(false);
+  };
+
+  const toggleVoice = async () => {
+    if (!isVoiceEnabled) {
+      setIsVoiceEnabled(true);
+      await connectVoice();
+    } else {
+      setIsVoiceEnabled(false);
+      disconnectVoice();
+    }
+  };
+
+  // Audio utility functions
+  const convertFloat32ToPCM16 = (float32Array: Float32Array): Int16Array => {
+    const int16Array = new Int16Array(float32Array.length);
+    for (let i = 0; i < float32Array.length; i++) {
+      const s = Math.max(-1, Math.min(1, float32Array[i]));
+      int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return int16Array;
+  };
+
+  const playAudioChunk = async (base64Audio: string) => {
+    if (!audioContextRef.current) return;
+
+    try {
+      const binaryString = atob(base64Audio);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      const float32Array = new Float32Array(bytes.length / 2);
+      const dataView = new DataView(bytes.buffer);
+      for (let i = 0; i < float32Array.length; i++) {
+        const int16 = dataView.getInt16(i * 2, true);
+        float32Array[i] = int16 / (int16 < 0 ? 0x8000 : 0x7FFF);
+      }
+
+      const audioBuffer = audioContextRef.current.createBuffer(1, float32Array.length, 24000);
+      audioBuffer.copyToChannel(float32Array, 0);
+
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContextRef.current.destination);
+      source.start();
+    } catch (error) {
+      console.error("Error playing audio:", error);
+    }
+  };
+
   return (
     <>
       {/* Floating Action Button */}
@@ -169,9 +369,13 @@ export default function AIFab() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setIsVoiceChatOpen(true)}
-                  className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
-                  title="Start voice conversation"
+                  onClick={toggleVoice}
+                  className={`h-8 w-8 p-0 transition-colors ${
+                    isVoiceEnabled 
+                      ? "text-electric-blue bg-electric-blue/10" 
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                  title={isVoiceEnabled ? "Disable voice chat" : "Enable voice chat"}
                 >
                   <Mic className="w-4 h-4" />
                 </Button>
@@ -301,12 +505,34 @@ export default function AIFab() {
               </div>
             )}
             
+            {/* Voice Status */}
+            {isVoiceEnabled && (
+              <div className="text-xs text-center py-2 px-4 bg-electric-blue/5 rounded-lg border border-electric-blue/20">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${isVoiceConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                  <span className="text-electric-blue font-medium">
+                    {isVoiceConnected ? 'Voice Active - Speak naturally' : 'Connecting voice...'}
+                  </span>
+                  {isVoiceConnected && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsMuted(!isMuted)}
+                      className="h-6 w-6 p-0"
+                    >
+                      {isMuted ? '🔇' : '🎤'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Search Input */}
             <div className="border-t border-gray-100 dark:border-gray-800 pt-4 mt-4">
               <AISearchBar 
                 onSearch={handleSearch} 
                 onChat={handleChat}
-                placeholder="Ask AI about your business data..."
+                placeholder={isVoiceEnabled ? "Type or speak your question..." : "Ask AI about your business data..."}
                 compact
                 isLoading={searchMutation.isPending}
               />
@@ -315,11 +541,7 @@ export default function AIFab() {
         </DialogContent>
       </Dialog>
 
-      {/* Voice Chat Modal */}
-      <VoiceChat 
-        isOpen={isVoiceChatOpen} 
-        onClose={() => setIsVoiceChatOpen(false)} 
-      />
+
     </>
   );
 }
