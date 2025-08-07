@@ -72,31 +72,45 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
         setIsConnected(true);
         setIsListening(true);
 
-        // Send initial configuration with voice settings
-        ws.send(JSON.stringify({
-          type: "session.update",
-          session: {
-            voice: aiSettings?.voiceId || "alloy",
-            instructions: aiSettings?.personalityKeywords ? (() => {
-              try {
-                const keywords = JSON.parse(aiSettings.personalityKeywords);
-                return `You are a helpful AI assistant for a business management platform called Field Force 2. Your personality traits: ${keywords.join(", ")}. Help users with their leads, tasks, documents, and business questions.`;
-              } catch {
-                return "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions.";
+        // Wait a moment for connection to stabilize then send session update
+        setTimeout(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: "session.update",
+              session: {
+                voice: aiSettings?.voiceId || "alloy",
+                instructions: aiSettings?.personalityKeywords ? (() => {
+                  try {
+                    const keywords = JSON.parse(aiSettings.personalityKeywords);
+                    return `You are a helpful AI assistant for a business management platform called Field Force 2. Your personality traits: ${keywords.join(", ")}. Help users with their leads, tasks, documents, and business questions.`;
+                  } catch {
+                    return "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions.";
+                  }
+                })() : "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions.",
+                input_audio_format: "pcm16",
+                output_audio_format: "pcm16",
+                input_audio_transcription: { model: "whisper-1" },
+                turn_detection: {
+                  type: "server_vad",
+                  threshold: 0.5,
+                  prefix_padding_ms: 300,
+                  silence_duration_ms: 1200
+                },
+                modalities: ["text", "audio"]
               }
-            })() : "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions.",
-            input_audio_format: "pcm16",
-            output_audio_format: "pcm16",
-            input_audio_transcription: { model: "whisper-1" },
-            turn_detection: {
-              type: "server_vad",
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 800
-            },
-            modalities: ["text", "audio"]
+            }));
+            console.log("Session configuration sent");
+            
+            // Set up keep-alive ping
+            const keepAlive = setInterval(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'ping' }));
+              } else {
+                clearInterval(keepAlive);
+              }
+            }, 30000); // ping every 30 seconds
           }
-        }));
+        }, 100);
       };
 
       ws.onmessage = async (event) => {
@@ -134,8 +148,8 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
         setIsConnected(false);
       };
 
-      ws.onclose = () => {
-        console.log("Voice connection closed");
+      ws.onclose = (event) => {
+        console.log(`Voice connection closed: code=${event.code}, reason=${event.reason}, wasClean=${event.wasClean}`);
         setConnectionStatus("disconnected");
         setIsConnected(false);
         setIsListening(false);
@@ -203,15 +217,31 @@ export default function VoiceChat({ isOpen, onClose }: VoiceChatProps) {
 
       source.connect(processorRef.current);
       processorRef.current.connect(audioContextRef.current.destination);
+      
+      console.log("Audio processing connected successfully");
 
     } catch (error) {
       console.error("Failed to connect to voice API:", error);
       setConnectionStatus("disconnected");
       toast({
-        title: "Connection Failed",
+        title: "Connection Failed", 
         description: "Could not establish voice connection. Please check your microphone permissions.",
         variant: "destructive",
       });
+      
+      // Clean up on error
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
     }
   };
 

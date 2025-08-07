@@ -37,9 +37,17 @@ export function handleVoiceWebSocket(ws: WebSocket, request: IncomingMessage, us
     try {
       const data = JSON.parse(message);
       
+      // Add ping/pong mechanism for keep-alive
+      if (data.type === 'ping') {
+        ws.send(JSON.stringify({ type: 'pong' }));
+        return;
+      }
+      
       if (session.openaiWs && session.openaiWs.readyState === WebSocket.OPEN) {
         // Forward message to OpenAI
         session.openaiWs.send(JSON.stringify(data));
+      } else {
+        console.log('OpenAI connection not ready, queueing message:', data.type);
       }
     } catch (error) {
       console.error('Error handling client message:', error);
@@ -51,8 +59,8 @@ export function handleVoiceWebSocket(ws: WebSocket, request: IncomingMessage, us
   });
 
   // Handle client disconnect
-  ws.on('close', () => {
-    console.log(`Voice session ended: ${sessionId}`);
+  ws.on('close', (code, reason) => {
+    console.log(`Voice session ended: ${sessionId}, code: ${code}, reason: ${reason}`);
     
     // Close OpenAI connection
     if (session.openaiWs) {
@@ -149,12 +157,14 @@ function connectToOpenAI(session: VoiceSession) {
       }));
     });
 
-    openaiWs.on('close', () => {
-      console.log('OpenAI connection closed');
-      session.clientWs.send(JSON.stringify({
-        type: 'connection',
-        status: 'disconnected'
-      }));
+    openaiWs.on('close', (code, reason) => {
+      console.log(`OpenAI connection closed, code: ${code}, reason: ${reason}`);
+      if (session.clientWs.readyState === WebSocket.OPEN) {
+        session.clientWs.send(JSON.stringify({
+          type: 'connection',
+          status: 'disconnected'
+        }));
+      }
     });
 
   } catch (error) {
