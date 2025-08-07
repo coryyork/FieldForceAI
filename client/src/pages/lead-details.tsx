@@ -142,55 +142,82 @@ export default function LeadDetails() {
       </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-auto app-container py-6 safe-area-bottom">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <main className="flex-1 overflow-auto">
+          <div className="max-w-7xl mx-auto p-6 lg:p-8">
             {/* Header */}
-            <div className="flex flex-col space-y-4 sm:space-y-0">
-              <div className="flex items-center space-x-4">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setLocation("/sales")}
-                  className="app-button app-button-secondary touch-target"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Sales
-                </Button>
-                <div className="flex-1">
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{lead.name}</h1>
-                  <p className="text-gray-600 dark:text-gray-400">{lead.company}</p>
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setLocation("/sales")}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{lead.name}</h1>
+                    <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-400">
+                      <span className="flex items-center">
+                        <Building className="w-4 h-4 mr-1" />
+                        {lead.company || "No Company"}
+                      </span>
+                      <Badge 
+                        variant="outline" 
+                        className={`${
+                          lead.stage === 'closed_won' 
+                            ? 'border-green-200 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-300 dark:bg-green-900/20'
+                            : lead.stage === 'closed_lost'
+                            ? 'border-red-200 text-red-700 bg-red-50 dark:border-red-800 dark:text-red-300 dark:bg-red-900/20'
+                            : 'border-blue-200 text-blue-700 bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:bg-blue-900/20'
+                        }`}
+                      >
+                        {lead.stage.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                      </Badge>
+                      {lead.value && (
+                        <span className="flex items-center font-semibold text-green-600">
+                          <DollarSign className="w-4 h-4 mr-1" />
+                          ${parseFloat(lead.value).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={() => setIsEditOpen(true)} variant="outline" className="app-button app-button-secondary">
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-                <Button 
-                  onClick={() => deleteLeadMutation.mutate()} 
-                  variant="destructive"
-                  disabled={deleteLeadMutation.isPending}
-                  className="app-button"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </Button>
+                
+                <div className="flex items-center space-x-3">
+                  <Button 
+                    onClick={() => setIsEditOpen(true)} 
+                    variant="outline"
+                    className="border-gray-300 hover:border-gray-400"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button 
+                    onClick={() => deleteLeadMutation.mutate()} 
+                    variant="destructive"
+                    disabled={deleteLeadMutation.isPending}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Main Content Area - Contact Info and Notes Timeline */}
               <div className="lg:col-span-3 space-y-6">
                 {/* Contact Information */}
-                <div className="app-card">
-                  <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
                       <User className="w-5 h-5 mr-2" />
                       Contact Information
-                    </h3>
-                  </div>
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div>
                         <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</label>
                         <p className="text-gray-900 dark:text-white">{lead.name}</p>
@@ -245,19 +272,19 @@ export default function LeadDetails() {
                         <p className="text-gray-900 dark:text-white">{lead.assignedUserId || "Unassigned"}</p>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
                 {/* Lead Notes */}
                 {lead.notes && (
-                  <div className="app-card">
-                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notes</h3>
-                    </div>
-                    <div className="p-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Notes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
                       <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{lead.notes}</p>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 )}
 
                 {/* Notes Timeline */}
@@ -266,6 +293,47 @@ export default function LeadDetails() {
 
               {/* Right Sidebar */}
               <div className="lg:col-span-1 space-y-6">
+                {/* Lead Details */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <TrendingUp className="w-5 h-5 mr-2" />
+                      Lead Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Stage</label>
+                      <Badge 
+                        variant="outline" 
+                        className={`block mt-1 w-fit ${
+                          lead.stage === 'closed_won' 
+                            ? 'border-green-200 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-300 dark:bg-green-900/20'
+                            : lead.stage === 'closed_lost'
+                            ? 'border-red-200 text-red-700 bg-red-50 dark:border-red-800 dark:text-red-300 dark:bg-red-900/20'
+                            : 'border-blue-200 text-blue-700 bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:bg-blue-900/20'
+                        }`}
+                      >
+                        {lead.stage.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                      </Badge>
+                    </div>
+                    {lead.value && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Value</label>
+                        <p className="text-lg font-semibold text-green-600 mt-1">
+                          ${parseFloat(lead.value).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                    {lead.probability !== null && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Probability</label>
+                        <p className="text-gray-900 dark:text-white mt-1">{lead.probability || 0}%</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* Quick Actions */}
                 <Card>
                   <CardHeader>
@@ -274,21 +342,24 @@ export default function LeadDetails() {
                       Quick Actions
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3">
                     <Button 
-                      className="w-full bg-electric-blue hover:bg-blue-600 text-white touch-target"
-                      onClick={() => window.open('https://webware.io/demo', '_blank')}
+                      onClick={() => window.open(`mailto:${lead.email}`)} 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      disabled={!lead.email}
                     >
-                      Book a Webware Demo
+                      <Mail className="w-4 h-4 mr-2" />
+                      Send Email
                     </Button>
                     <Button 
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white touch-target"
-                      onClick={() => {
-                        // Process new AT&T deal logic here
-                        console.log('Processing new AT&T deal for lead:', lead.id);
-                      }}
+                      onClick={() => window.open(`tel:${lead.phone}`)} 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      disabled={!lead.phone}
                     >
-                      Process New AT&T Deal
+                      <Phone className="w-4 h-4 mr-2" />
+                      Call Lead
                     </Button>
                   </CardContent>
                 </Card>
@@ -326,17 +397,25 @@ export default function LeadDetails() {
                       Timeline
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
+                  <CardContent className="space-y-3">
                     <div>
                       <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Created</label>
-                      <p className="text-gray-900 dark:text-white">
-                        {new Date(lead.createdAt).toLocaleDateString()}
+                      <p className="text-gray-900 dark:text-white text-sm">
+                        {new Date(lead.createdAt).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
                       </p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</label>
-                      <p className="text-gray-900 dark:text-white">
-                        {new Date(lead.updatedAt).toLocaleDateString()}
+                      <p className="text-gray-900 dark:text-white text-sm">
+                        {new Date(lead.updatedAt).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
                       </p>
                     </div>
                   </CardContent>
