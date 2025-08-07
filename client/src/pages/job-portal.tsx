@@ -32,6 +32,9 @@ export default function JobPortal() {
     queryKey: ["/api/public/job-openings"],
   });
 
+  // Get company name from the first job opening (since they're all from the same company)
+  const companyName = jobOpenings.length > 0 ? jobOpenings[0].companyName : "Field Force";
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
@@ -92,7 +95,7 @@ export default function JobPortal() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Field Force
+                  {companyName}
                 </h1>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Career Opportunities</p>
               </div>
@@ -387,7 +390,7 @@ export default function JobPortal() {
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold">Field Force</h3>
+                  <h3 className="text-xl font-bold">{companyName}</h3>
                   <p className="text-gray-400 text-sm">Building the future of business</p>
                 </div>
               </div>
@@ -420,7 +423,7 @@ export default function JobPortal() {
           
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400">
-              © 2025 Field Force. All rights reserved.
+              © 2025 {companyName}. All rights reserved.
             </p>
             <div className="flex items-center space-x-4 mt-4 md:mt-0">
               <Badge variant="outline" className="border-green-500 text-green-400 bg-green-500/10">
