@@ -70,19 +70,34 @@ export default function AIFab() {
 
   const formatSearchResults = (data: any) => {
     const { analysis } = data;
-    let response = `${analysis.summary}\n\n`;
+    let response = analysis.summary;
 
     if (analysis.relevantResults?.leads?.length > 0) {
-      response += "**Leads Found:**\n";
+      response += "\n\nLeads Found:\n";
       analysis.relevantResults.leads.forEach((lead: any) => {
-        response += `• ${lead.name} (${lead.company}) - ${lead.stage}\n`;
+        const location = lead.city && lead.state ? ` (${lead.city}, ${lead.state})` : 
+                        lead.location ? ` (${lead.location})` : '';
+        response += `• ${lead.name} at ${lead.company}${location} - Stage: ${lead.stage}\n`;
       });
-      response += "\n";
+    }
+
+    if (analysis.relevantResults?.tasks?.length > 0) {
+      response += "\nTasks Found:\n";
+      analysis.relevantResults.tasks.forEach((task: any) => {
+        response += `• ${task.title} - ${task.status}\n`;
+      });
+    }
+
+    if (analysis.relevantResults?.documents?.length > 0) {
+      response += "\nDocuments Found:\n";
+      analysis.relevantResults.documents.forEach((doc: any) => {
+        response += `• ${doc.title}\n`;
+      });
     }
 
     if (analysis.suggestedActions?.length > 0) {
-      response += "**Suggested Actions:**\n";
-      analysis.suggestedActions.forEach((action: string) => {
+      response += "\nWhat you can do next:\n";
+      analysis.suggestedActions.slice(0, 3).forEach((action: string) => {
         response += `• ${action}\n`;
       });
     }
@@ -181,7 +196,7 @@ export default function AIFab() {
                             ? 'bg-electric-blue text-white ml-2'
                             : 'bg-gray-100 dark:bg-gray-800 mr-2'
                         }`}>
-                          <div className="text-sm whitespace-pre-wrap">
+                          <div className="text-sm whitespace-pre-line leading-relaxed">
                             {message.content}
                           </div>
                           <div className={`text-xs mt-1 opacity-70 ${

@@ -28,31 +28,28 @@ export class AIService {
       
       // Use AI to analyze and rank the results
       const prompt = `
-        You are an AI assistant for a business platform called Field Force. 
-        Analyze the following search results for the query: "${query}"
+        You are a helpful AI assistant for Field Force, a business management platform. 
+        Respond conversationally and naturally, like a knowledgeable colleague.
         
-        Search Results:
-        Leads found: ${JSON.stringify(searchResults.leads)}
-        Documents found: ${JSON.stringify(searchResults.documents)}
-        Tasks found: ${JSON.stringify(searchResults.tasks)}
+        User asked: "${query}"
         
-        ${allLeads.length > 0 ? `All Leads for Analysis: ${JSON.stringify(allLeads)}` : ''}
+        Available data:
+        Search Results: ${JSON.stringify(searchResults, null, 2)}
+        ${allLeads.length > 0 ? `All Leads: ${JSON.stringify(allLeads, null, 2)}` : ''}
         
-        IMPORTANT: If no search results were found but all leads data is available, use the all leads data for analysis.
-        
-        For queries about leads, analyze and rank them by:
-        - "recent/latest/newest": Sort by updatedAt or createdAt (most recent first)
-        - "top/best/high value": Sort by lead value (higher is better)
-        - "hot leads": Focus on leads in proposal/negotiation stages
-        - Stage progression (proposal/negotiation stages are high priority)
-        - Recent activity and engagement
-        
-        Always prioritize showing actual lead data over saying "no results found".
+        Guidelines:
+        - Be conversational and friendly, not robotic
+        - For greetings like "hi" or "hello", respond naturally and offer to help
+        - For queries about "recent/latest/newest" leads, sort by updatedAt (most recent first)
+        - For "top/best/high value" leads, prioritize by value and stage
+        - Always use actual data when available instead of saying "no results"
+        - Keep responses concise but helpful
+        - Use natural language, not technical jargon
         
         Provide a structured response with:
-        1. A summary of what was found
-        2. The most relevant results ranked by importance
-        3. Suggested actions the user can take
+        1. A natural, conversational summary
+        2. Relevant results in order of importance  
+        3. Practical next steps the user can take
         
         Respond in JSON format with this structure:
         {
