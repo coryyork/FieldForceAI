@@ -30,7 +30,7 @@ export async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-export function setupAuth(app: Express) {
+export async function setupAuth(app: Express) {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const PgSession = connectPg(session);
   
@@ -46,8 +46,8 @@ export function setupAuth(app: Express) {
     }),
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      secure: false, // Always false for development
+      sameSite: 'lax',
       maxAge: sessionTtl,
     },
   };
