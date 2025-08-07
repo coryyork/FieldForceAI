@@ -11,19 +11,42 @@ export class AIService {
       // First, get raw search results from the database
       const searchResults = await storage.searchAll(companyId, query);
       
+      console.log("=== AI SEARCH DEBUG ===");
+      console.log("Company ID:", companyId);
+      console.log("Query:", query);
+      console.log("Search results:", JSON.stringify(searchResults, null, 2));
+      
+      // For queries about "top" or "best" leads, get all leads and let AI analyze
+      let allLeads = [];
+      if (query.toLowerCase().includes('top') || query.toLowerCase().includes('best') || query.toLowerCase().includes('high')) {
+        allLeads = await storage.getLeads(companyId);
+        console.log("Got all leads for ranking:", allLeads.length);
+      }
+      
       // Use AI to analyze and rank the results
       const prompt = `
         You are an AI assistant for a business platform called Field Force. 
         Analyze the following search results for the query: "${query}"
         
+        Search Results:
         Leads found: ${JSON.stringify(searchResults.leads)}
         Documents found: ${JSON.stringify(searchResults.documents)}
         Tasks found: ${JSON.stringify(searchResults.tasks)}
+        
+        ${allLeads.length > 0 ? `All Leads for Analysis: ${JSON.stringify(allLeads)}` : ''}
+        
+        For queries about "top" or "best" leads, analyze ALL leads and rank them by:
+        - Lead value (higher is better)
+        - Stage progression (proposal/negotiation stages are high priority)
+        - Recent activity (updatedAt)
+        - Probability of closing
         
         Provide a structured response with:
         1. A summary of what was found
         2. The most relevant results ranked by importance
         3. Suggested actions the user can take
+        
+        If the user asked for "top leads", make sure to rank all available leads by value and importance.
         
         Respond in JSON format with this structure:
         {
