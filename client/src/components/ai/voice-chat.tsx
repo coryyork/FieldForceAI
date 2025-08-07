@@ -76,9 +76,6 @@ export default function VoiceChat({
       // Create a processor for handling audio chunks
       processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
       
-      console.log("Created ScriptProcessorNode, buffer size:", 4096);
-      console.log("Audio context sample rate:", audioContextRef.current.sampleRate);
-      
       console.log("Connecting to WebSocket...");
       // Connect to backend WebSocket endpoint  
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -124,12 +121,10 @@ export default function VoiceChat({
             const keepAlive = setInterval(() => {
               if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: 'ping' }));
-                console.log("Sending keep-alive ping");
               } else {
-                console.log("WebSocket not ready, clearing keep-alive");
                 clearInterval(keepAlive);
               }
-            }, 10000); // ping every 10 seconds
+            }, 30000); // ping every 30 seconds
           }
         }, 100);
       };
@@ -184,84 +179,80 @@ export default function VoiceChat({
 
       let audioBuffer: Float32Array[] = [];
       let silenceCounter = 0;
-      let processedFrameCount = 0;
-      const maxSilenceFrames = 50; // ~1 second of silence before committing
+      const silenceThreshold = 0.01; // Reasonable threshold for voice detection
+      const bufferSize = 6; // Buffer ~300ms of audio before sending
       
       // Process and send audio chunks
       processorRef.current.onaudioprocess = (e) => {
-        processedFrameCount++;
-        
-        // Log every 50 frames to see if processing is happening
-        if (processedFrameCount % 50 === 1) {
-          console.log(`Audio processing active! Frame count: ${processedFrameCount}, ws ready: ${ws.readyState === WebSocket.OPEN}`);
-        }
-        
-        // Send audio if WebSocket is ready
+        // Only process if WebSocket is ready
         if (ws.readyState === WebSocket.OPEN) {
           const inputData = e.inputBuffer.getChannelData(0);
           
           // Check if there's actual audio content
           let hasAudio = false;
-          let amplitude = 0;
+          let maxAmplitude = 0;
           for (let i = 0; i < inputData.length; i++) {
             const sample = Math.abs(inputData[i]);
-            amplitude = Math.max(amplitude, sample);
-            if (sample > 0.001) { // Very low threshold to detect any audio
+            maxAmplitude = Math.max(maxAmplitude, sample);
+            if (sample > silenceThreshold) {
               hasAudio = true;
+              break;
             }
           }
           
-          // Log amplitude occasionally to see if we're getting any input at all
-          if (processedFrameCount % 100 === 1) {
-            console.log("Audio amplitude check - Max amplitude:", amplitude.toFixed(6), "hasAudio:", hasAudio);
-          }
-          
-          // Always log when audio is detected
           if (hasAudio) {
-            console.log("🎤 AUDIO DETECTED! Amplitude:", amplitude.toFixed(4), "Sending to server...");
-          }
-          
-          if (hasAudio) {
+            // Reset silence counter and add to buffer
             silenceCounter = 0;
             audioBuffer.push(new Float32Array(inputData));
             
-            // Send audio chunk immediately
-            const pcm16 = convertFloat32ToPCM16(inputData);
-            const uint8Array = new Uint8Array(pcm16.buffer);
-            let binaryString = '';
-            for (let i = 0; i < uint8Array.length; i++) {
-              binaryString += String.fromCharCode(uint8Array[i]);
-            }
-            
-            try {
-              ws.send(JSON.stringify({
-                type: "input_audio_buffer.append",
-                audio: btoa(binaryString)
-              }));
-              // Log audio sending occasionally to avoid spam
-              if (Math.random() < 0.1) {
-                console.log("Sending audio chunk, amplitude:", amplitude.toFixed(3), "size:", uint8Array.length);
-              }
-            } catch (error) {
-              console.error("Error sending audio:", error);
+            // Send when buffer is full
+            if (audioBuffer.length >= bufferSize) {
+              sendBufferedAudio();
             }
           } else {
             silenceCounter++;
             
-            // If we have audio in buffer and silence detected, commit the audio
-            if (audioBuffer.length > 0 && silenceCounter > maxSilenceFrames) {
-              try {
-                ws.send(JSON.stringify({
-                  type: "input_audio_buffer.commit"
-                }));
-                console.log("Audio committed after silence detected");
-              } catch (error) {
-                console.error("Error committing audio:", error);
-              }
-              audioBuffer = [];
-              silenceCounter = 0;
+            // If we have buffered audio and detected silence for 200ms, send it
+            if (audioBuffer.length > 0 && silenceCounter >= 10) {
+              sendBufferedAudio();
+              // Commit the audio buffer after sending
+              ws.send(JSON.stringify({
+                type: "input_audio_buffer.commit"
+              }));
             }
           }
+        }
+        
+        function sendBufferedAudio() {
+          if (audioBuffer.length === 0) return;
+          
+          // Combine all buffered audio
+          const totalLength = audioBuffer.reduce((acc, arr) => acc + arr.length, 0);
+          const combinedBuffer = new Float32Array(totalLength);
+          let offset = 0;
+          
+          for (const chunk of audioBuffer) {
+            combinedBuffer.set(chunk, offset);
+            offset += chunk.length;
+          }
+          
+          // Convert to 16-bit PCM
+          const pcm16 = convertFloat32ToPCM16(combinedBuffer);
+          const uint8Array = new Uint8Array(pcm16.buffer);
+          let binaryString = '';
+          for (let i = 0; i < uint8Array.length; i++) {
+            binaryString += String.fromCharCode(uint8Array[i]);
+          }
+          
+          // Send to server
+          ws.send(JSON.stringify({
+            type: "input_audio_buffer.append",
+            audio: btoa(binaryString)
+          }));
+          
+          // Clear buffer
+          audioBuffer = [];
+          silenceCounter = 0;
         }
       };
 
@@ -269,20 +260,7 @@ export default function VoiceChat({
       source.connect(processorRef.current);
       processorRef.current.connect(audioContextRef.current.destination);
       
-      console.log("Audio processing connected successfully");
-      console.log("Audio stream tracks:", stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
-      
-      // Test that the processor is working by logging immediately
-      console.log("Processor connected. Waiting for onaudioprocess events...");
-      
-      // Force audio context to stay active
-      const oscillator = audioContextRef.current.createOscillator();
-      const gainNode = audioContextRef.current.createGain();
-      gainNode.gain.setValueAtTime(0, audioContextRef.current.currentTime); // Silent
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContextRef.current.destination);
-      oscillator.start();
-      console.log("Started silent oscillator to keep audio context active");
+      console.log("Audio processing connected");
 
     } catch (error) {
       console.error("Failed to connect to voice API:", error);
