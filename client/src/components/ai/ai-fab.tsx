@@ -10,6 +10,7 @@ import AISearchBar from "./ai-search-bar";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
+import VoiceChat from "./voice-chat";
 
 interface ChatMessage {
   id: string;
@@ -27,11 +28,7 @@ export default function AIFab() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // Voice connection refs
-  const wsRef = useRef<WebSocket | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  // No longer need voice refs - VoiceChat component handles this
 
   // Get AI settings for voice configuration
   const { data: aiSettings } = useQuery<{
@@ -337,24 +334,47 @@ export default function AIFab() {
             
             {/* Voice Status */}
             {isVoiceEnabled && (
-              <div className="text-xs text-center py-2 px-4 bg-electric-blue/5 rounded-lg border border-electric-blue/20">
-                <div className="flex items-center justify-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${isVoiceConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                  <span className="text-electric-blue font-medium">
-                    {isVoiceConnected ? 'Voice Active - Speak naturally' : 'Connecting voice...'}
-                  </span>
-                  {isVoiceConnected && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsMuted(!isMuted)}
-                      className="h-6 w-6 p-0"
-                    >
-                      {isMuted ? '🔇' : '🎤'}
-                    </Button>
-                  )}
+              <>
+                <div className="text-xs text-center py-2 px-4 bg-electric-blue/5 rounded-lg border border-electric-blue/20">
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${isVoiceConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                    <span className="text-electric-blue font-medium">
+                      {isVoiceConnected ? 'Voice Active - Speak naturally' : 'Connecting voice...'}
+                    </span>
+                    {isVoiceConnected && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsMuted(!isMuted)}
+                        className="h-6 w-6 p-0"
+                      >
+                        {isMuted ? '🔇' : '🎤'}
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
+                
+                {/* Voice Chat Component (hidden but active) */}
+                <div className="hidden">
+                  <VoiceChat 
+                    isEnabled={isVoiceEnabled}
+                    onTranscript={(text) => {
+                      // Add user's spoken text to chat
+                      const userMessage: ChatMessage = {
+                        id: `user-${Date.now()}`,
+                        type: 'user',
+                        content: text,
+                        timestamp: new Date()
+                      };
+                      setMessages(prev => [...prev, userMessage]);
+                      // Process the spoken query
+                      handleSearch(text);
+                    }}
+                    onConnectionChange={(connected) => setIsVoiceConnected(connected)}
+                    onMuteChange={(muted) => setIsMuted(muted)}
+                  />
+                </div>
+              </>
             )}
 
             {/* Search Input */}
