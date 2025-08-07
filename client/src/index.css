@@ -18,15 +18,13 @@
 
   /* Prevent scroll bouncing on mobile and ensure app fills screen */
   html, body {
-    height: 100vh;
+    min-height: 100vh;
     width: 100vw;
-    overflow: hidden;
   }
 
   #root {
-    height: 100vh;
+    min-height: 100vh;
     width: 100vw;
-    overflow: hidden;
   }
   
   /* Smooth scrolling for mobile */
