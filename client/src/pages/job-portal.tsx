@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, MapPin, Calendar, DollarSign, Users, Clock, ArrowRight, Star, CheckCircle, Briefcase } from "lucide-react";
+import { Building2, MapPin, Calendar, DollarSign, Users, Clock, ArrowRight, Star, CheckCircle, Briefcase, Mail, Phone, FileText, X } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface PublicJobOpening {
   id: string;
@@ -38,6 +42,17 @@ export default function JobPortal() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [selectedJob, setSelectedJob] = useState<PublicJobOpening | null>(null);
+  const [applicationData, setApplicationData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    coverLetter: "",
+    experience: "",
+    portfolioUrl: ""
+  });
+  
+  const { toast } = useToast();
 
   // Filter job openings
   const filteredJobs = jobOpenings.filter(job => {
@@ -52,6 +67,60 @@ export default function JobPortal() {
   // Get unique departments and locations for filters
   const departments = Array.from(new Set(jobOpenings.map(job => job.department).filter(Boolean))) as string[];
   const locations = Array.from(new Set(jobOpenings.map(job => job.location).filter(Boolean))) as string[];
+
+  const handleApplicationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedJob) return;
+
+    // Basic validation
+    if (!applicationData.fullName || !applicationData.email || !applicationData.coverLetter) {
+      toast({
+        title: "Required Fields Missing",
+        description: "Please fill in your name, email, and cover letter.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(applicationData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // In a real implementation, this would send to your backend
+      // For now, we'll just show a success message
+      toast({
+        title: "Application Submitted!",
+        description: `Thank you for applying to ${selectedJob.title}. We'll review your application and get back to you soon.`,
+      });
+
+      // Reset form and close modal
+      setApplicationData({
+        fullName: "",
+        email: "",
+        phone: "",
+        coverLetter: "",
+        experience: "",
+        portfolioUrl: ""
+      });
+      setSelectedJob(null);
+
+    } catch (error) {
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your application. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const getEmploymentTypeBadge = (type: string) => {
     switch (type) {
@@ -359,17 +428,29 @@ export default function JobPortal() {
                           )}
                         </div>
                         
-                        <Button 
-                          className="bg-gradient-to-r from-electric-blue to-indigo-600 hover:from-electric-blue hover:to-indigo-700 text-white font-semibold px-6 py-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 group"
-                          onClick={() => {
-                            // For now, just scroll to top. In a real implementation, 
-                            // this would open an application form or redirect to an external application system
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                        >
-                          Apply Now
-                          <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                        </Button>
+                        <Dialog open={selectedJob?.id === job.id} onOpenChange={(open) => {
+                          if (!open) {
+                            setSelectedJob(null);
+                            setApplicationData({
+                              fullName: "",
+                              email: "",
+                              phone: "",
+                              coverLetter: "",
+                              experience: "",
+                              portfolioUrl: ""
+                            });
+                          }
+                        }}>
+                          <DialogTrigger asChild>
+                            <Button 
+                              className="bg-gradient-to-r from-electric-blue to-indigo-600 hover:from-electric-blue hover:to-indigo-700 text-white font-semibold px-6 py-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 group"
+                              onClick={() => setSelectedJob(job)}
+                            >
+                              Apply Now
+                              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                          </DialogTrigger>
+                        </Dialog>
                       </div>
                     </div>
                   </CardContent>
@@ -379,6 +460,175 @@ export default function JobPortal() {
           </div>
         )}
       </div>
+
+      {/* Application Modal */}
+      {selectedJob && (
+        <Dialog open={true} onOpenChange={(open) => {
+          if (!open) {
+            setSelectedJob(null);
+            setApplicationData({
+              fullName: "",
+              email: "",
+              phone: "",
+              coverLetter: "",
+              experience: "",
+              portfolioUrl: ""
+            });
+          }
+        }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">
+                Apply for {selectedJob.title}
+              </DialogTitle>
+              <DialogDescription className="text-gray-600 dark:text-gray-400">
+                Join {selectedJob.companyName} - {selectedJob.department && `${selectedJob.department} Department`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleApplicationSubmit} className="space-y-6 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="text-sm font-medium">
+                    Full Name *
+                  </Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Your full name"
+                    value={applicationData.fullName}
+                    onChange={(e) => setApplicationData(prev => ({ ...prev, fullName: e.target.value }))}
+                    className="border-gray-300 dark:border-gray-600 focus:border-electric-blue focus:ring-electric-blue"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    Email Address *
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={applicationData.email}
+                    onChange={(e) => setApplicationData(prev => ({ ...prev, email: e.target.value }))}
+                    className="border-gray-300 dark:border-gray-600 focus:border-electric-blue focus:ring-electric-blue"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-sm font-medium">
+                    Phone Number
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    value={applicationData.phone}
+                    onChange={(e) => setApplicationData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="border-gray-300 dark:border-gray-600 focus:border-electric-blue focus:ring-electric-blue"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="portfolioUrl" className="text-sm font-medium">
+                    Portfolio/LinkedIn URL
+                  </Label>
+                  <Input
+                    id="portfolioUrl"
+                    type="url"
+                    placeholder="https://yourportfolio.com"
+                    value={applicationData.portfolioUrl}
+                    onChange={(e) => setApplicationData(prev => ({ ...prev, portfolioUrl: e.target.value }))}
+                    className="border-gray-300 dark:border-gray-600 focus:border-electric-blue focus:ring-electric-blue"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="experience" className="text-sm font-medium">
+                  Relevant Experience
+                </Label>
+                <Textarea
+                  id="experience"
+                  placeholder="Brief summary of your relevant experience and skills..."
+                  value={applicationData.experience}
+                  onChange={(e) => setApplicationData(prev => ({ ...prev, experience: e.target.value }))}
+                  className="min-h-[100px] border-gray-300 dark:border-gray-600 focus:border-electric-blue focus:ring-electric-blue"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="coverLetter" className="text-sm font-medium">
+                  Cover Letter *
+                </Label>
+                <Textarea
+                  id="coverLetter"
+                  placeholder="Why are you interested in this position? What makes you a great fit for this role?"
+                  value={applicationData.coverLetter}
+                  onChange={(e) => setApplicationData(prev => ({ ...prev, coverLetter: e.target.value }))}
+                  className="min-h-[150px] border-gray-300 dark:border-gray-600 focus:border-electric-blue focus:ring-electric-blue"
+                  required
+                />
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Position Summary</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  <strong>Department:</strong> {selectedJob.department || 'Not specified'}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  <strong>Location:</strong> {selectedJob.location || 'Not specified'}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  <strong>Type:</strong> {getEmploymentTypeBadge(selectedJob.employmentType)}
+                </p>
+                {(selectedJob.salaryMin || selectedJob.salaryMax) && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Salary:</strong> {selectedJob.salaryMin && selectedJob.salaryMax 
+                      ? `$${Number(selectedJob.salaryMin).toLocaleString()} - $${Number(selectedJob.salaryMax).toLocaleString()}`
+                      : selectedJob.salaryMin 
+                        ? `From $${Number(selectedJob.salaryMin).toLocaleString()}`
+                        : `Up to $${Number(selectedJob.salaryMax).toLocaleString()}`
+                    }
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedJob(null);
+                    setApplicationData({
+                      fullName: "",
+                      email: "",
+                      phone: "",
+                      coverLetter: "",
+                      experience: "",
+                      portfolioUrl: ""
+                    });
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-electric-blue to-indigo-600 hover:from-electric-blue hover:to-indigo-700 text-white font-semibold"
+                >
+                  Submit Application
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Footer */}
       <footer className="bg-gradient-to-r from-gray-900 to-gray-800 text-white mt-20">
