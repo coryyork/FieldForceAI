@@ -138,16 +138,20 @@ export default function VoiceChat({
             // Play received audio
             await playAudioChunk(data.audio);
           } else if (data.type === "transcript") {
-            // Handle transcription updates
-            console.log("Transcript:", data.text);
-            if (onTranscript && data.text) {
-              onTranscript(data.text);
+            // Only process user transcripts, not AI responses
+            if (data.role === "user") {
+              console.log("User transcript:", data.text);
+              if (onTranscript && data.text) {
+                onTranscript(data.text);
+              }
             }
           } else if (data.type === "transcript_delta") {
-            // Handle partial transcriptions
-            console.log("Transcript delta:", data.text);
-            if (onTranscript && data.text) {
-              onTranscript(data.text);
+            // Skip AI response transcript deltas - only process user input
+            if (data.role === "user") {
+              console.log("User transcript delta:", data.text);
+              if (onTranscript && data.text) {
+                onTranscript(data.text);
+              }
             }
           } else if (data.type === "error") {
             console.error("Voice API error:", data.error);

@@ -148,12 +148,20 @@ function connectToOpenAI(session: VoiceSession, messageQueue: any[]) {
           console.log('Speech stopped, OpenAI processing...');
         } else if (parsedMessage.type === 'input_audio_buffer.committed') {
           console.log('Audio buffer committed');
+        } else if (parsedMessage.type === 'conversation.item.input_audio_transcription.completed') {
+          // User's spoken input transcript
+          session.clientWs.send(JSON.stringify({
+            type: 'transcript',
+            text: parsedMessage.transcript || '',
+            role: 'user'
+          }));
         } else if (parsedMessage.type === 'conversation.item.created') {
           // Forward transcripts and responses
+          const role = parsedMessage.item?.role || 'user';
           session.clientWs.send(JSON.stringify({
             type: 'transcript',
             text: parsedMessage.item?.content?.[0]?.transcript || '',
-            role: parsedMessage.item?.role
+            role: role
           }));
         } else if (parsedMessage.type === 'response.audio.delta') {
           // Forward audio chunks
@@ -163,10 +171,11 @@ function connectToOpenAI(session: VoiceSession, messageQueue: any[]) {
             itemId: parsedMessage.item_id
           }));
         } else if (parsedMessage.type === 'response.audio_transcript.delta') {
-          // Forward transcript updates
+          // Forward transcript updates - these are from the assistant
           session.clientWs.send(JSON.stringify({
             type: 'transcript_delta',
-            text: parsedMessage.delta
+            text: parsedMessage.delta,
+            role: 'assistant' // Mark as assistant response
           }));
         } else if (parsedMessage.type === 'error') {
           console.error('OpenAI error:', parsedMessage.error);
