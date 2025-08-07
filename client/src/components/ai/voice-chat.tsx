@@ -98,11 +98,11 @@ export default function VoiceChat({
                 instructions: aiSettings?.personalityKeywords ? (() => {
                   try {
                     const keywords = JSON.parse(aiSettings.personalityKeywords);
-                    return `You are a helpful AI assistant for a business management platform called Field Force 2. Your personality traits: ${keywords.join(", ")}. Help users with their leads, tasks, documents, and business questions.`;
+                    return `You are a helpful AI assistant for a business management platform called Field Force 2. Your personality traits: ${keywords.join(", ")}. Help users with their leads, tasks, documents, and business questions. Always respond in English regardless of the input language.`;
                   } catch {
-                    return "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions.";
+                    return "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions. Always respond in English regardless of the input language.";
                   }
-                })() : "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions.",
+                })() : "You are a helpful AI assistant for a business management platform called Field Force 2. Help users with their leads, tasks, documents, and business questions. Always respond in English regardless of the input language.",
                 input_audio_format: "pcm16",
                 output_audio_format: "pcm16",
                 input_audio_transcription: { model: "whisper-1" },
@@ -180,7 +180,7 @@ export default function VoiceChat({
       let audioBuffer: Float32Array[] = [];
       let silenceCounter = 0;
       const silenceThreshold = 0.01; // Reasonable threshold for voice detection
-      const bufferSize = 6; // Buffer ~300ms of audio before sending
+      const bufferSize = 20; // Buffer ~1 second of audio for smoother transmission
       
       // Process and send audio chunks
       processorRef.current.onaudioprocess = (e) => {
@@ -205,20 +205,22 @@ export default function VoiceChat({
             silenceCounter = 0;
             audioBuffer.push(new Float32Array(inputData));
             
-            // Send when buffer is full
+            // Send when buffer is full (about 1 second)
             if (audioBuffer.length >= bufferSize) {
               sendBufferedAudio();
             }
           } else {
             silenceCounter++;
             
-            // If we have buffered audio and detected silence for 200ms, send it
-            if (audioBuffer.length > 0 && silenceCounter >= 10) {
+            // If we have buffered audio and detected silence for 400ms, send it
+            if (audioBuffer.length > 0 && silenceCounter >= 20) {
               sendBufferedAudio();
-              // Commit the audio buffer after sending
-              ws.send(JSON.stringify({
-                type: "input_audio_buffer.commit"
-              }));
+              // Only commit if we actually sent audio
+              if (audioBuffer.length > 0) {
+                ws.send(JSON.stringify({
+                  type: "input_audio_buffer.commit"
+                }));
+              }
             }
           }
         }
@@ -250,7 +252,7 @@ export default function VoiceChat({
             audio: btoa(binaryString)
           }));
           
-          // Clear buffer
+          // Clear buffer and reset counter
           audioBuffer = [];
           silenceCounter = 0;
         }
