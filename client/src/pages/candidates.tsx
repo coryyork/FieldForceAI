@@ -30,6 +30,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import Sidebar from "@/components/layout/sidebar";
+import Header from "@/components/layout/header";
+import AIFab from "@/components/ai/ai-fab";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CandidateWithJobDetails {
   id: string;
@@ -58,6 +62,7 @@ const statusConfig = {
 };
 
 export default function Candidates() {
+  const { isAuthenticated } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateWithJobDetails | null>(null);
@@ -69,6 +74,7 @@ export default function Candidates() {
   // Fetch candidates with job details
   const { data: candidates = [], isLoading } = useQuery<CandidateWithJobDetails[]>({
     queryKey: ["/api/job-applications"],
+    enabled: isAuthenticated,
   });
 
   // Update candidate mutation
@@ -128,22 +134,38 @@ export default function Candidates() {
     setNotes(candidate.notes || "");
   };
 
+  if (!isAuthenticated) {
+    return null;
+  }
+
   if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-96"></div>
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
-          ))}
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <Header />
+          <main className="flex-1 p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-96"></div>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              ))}
+            </div>
+          </main>
         </div>
+        <AIFab />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Header />
+        <main className="flex-1 overflow-auto">
+          <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">All Candidates</h1>
@@ -404,6 +426,10 @@ export default function Candidates() {
           })
         )}
       </div>
+          </div>
+        </main>
+      </div>
+      <AIFab />
     </div>
   );
 }
