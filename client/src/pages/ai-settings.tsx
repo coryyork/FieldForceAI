@@ -47,7 +47,15 @@ export default function AISettings() {
   });
 
   // Get current AI settings
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading } = useQuery<{
+    aiName?: string;
+    personalityDescription?: string;
+    responseStyle?: string;
+    autoSuggestions?: boolean;
+    voiceEnabled?: boolean;
+    voiceId?: string;
+    voiceSpeed?: string | number;
+  }>({
     queryKey: ["/api/ai-settings"],
     retry: false,
   });
@@ -61,7 +69,7 @@ export default function AISettings() {
       autoSuggestions: settings.autoSuggestions ?? true,
       voiceEnabled: settings.voiceEnabled ?? false,
       voiceId: settings.voiceId || "alloy",
-      voiceSpeed: settings.voiceSpeed ? parseFloat(settings.voiceSpeed) : 1.0,
+      voiceSpeed: settings.voiceSpeed ? parseFloat(settings.voiceSpeed.toString()) : 1.0,
     });
   }
 
@@ -315,31 +323,37 @@ export default function AISettings() {
                           <FormDescription>
                             Choose a voice personality for your AI assistant
                           </FormDescription>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                            {[
-                              { value: "alloy", label: "Alloy", desc: "Neutral and balanced" },
-                              { value: "echo", label: "Echo", desc: "Warm and engaging" },
-                              { value: "fable", label: "Fable", desc: "Expressive and dynamic" },
-                              { value: "onyx", label: "Onyx", desc: "Deep and authoritative" },
-                              { value: "nova", label: "Nova", desc: "Friendly and energetic" },
-                              { value: "shimmer", label: "Shimmer", desc: "Clear and articulate" },
-                            ].map((voice) => (
-                              <div
-                                key={voice.value}
-                                onClick={() => field.onChange(voice.value)}
-                                className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                                  field.value === voice.value
-                                    ? "border-electric-blue bg-electric-blue/5"
-                                    : "border-gray-200 dark:border-gray-700 hover:border-electric-blue/50"
-                                }`}
-                              >
-                                <div className="font-medium text-sm">{voice.label}</div>
-                                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                  {voice.desc}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                          <FormControl>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                              {[
+                                { value: "alloy", label: "Alloy", desc: "Neutral and balanced" },
+                                { value: "echo", label: "Echo", desc: "Warm and engaging" },
+                                { value: "fable", label: "Fable", desc: "Expressive and dynamic" },
+                                { value: "onyx", label: "Onyx", desc: "Deep and authoritative" },
+                                { value: "nova", label: "Nova", desc: "Friendly and energetic" },
+                                { value: "shimmer", label: "Shimmer", desc: "Clear and articulate" },
+                              ].map((voice) => (
+                                <button
+                                  key={voice.value}
+                                  type="button"
+                                  onClick={() => {
+                                    console.log("Voice clicked:", voice.value);
+                                    field.onChange(voice.value);
+                                  }}
+                                  className={`p-4 border rounded-lg cursor-pointer transition-all text-left ${
+                                    field.value === voice.value
+                                      ? "border-electric-blue bg-electric-blue/5 ring-2 ring-electric-blue/20"
+                                      : "border-gray-200 dark:border-gray-700 hover:border-electric-blue/50"
+                                  }`}
+                                >
+                                  <div className="font-medium text-sm">{voice.label}</div>
+                                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                    {voice.desc}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

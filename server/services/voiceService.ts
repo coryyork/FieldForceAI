@@ -2,7 +2,7 @@ import WebSocket from 'ws';
 import { IncomingMessage } from 'http';
 
 // OpenAI Realtime API configuration
-const OPENAI_REALTIME_URL = 'wss://api.openai.com/v1/realtime';
+const OPENAI_REALTIME_URL = 'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 interface VoiceSession {
