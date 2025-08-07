@@ -268,6 +268,24 @@ export default function LeadDetails() {
                         <p className="text-gray-900 dark:text-white">{lead.source || "N/A"}</p>
                       </div>
                       <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Lead Score</label>
+                        <div className="flex items-center mt-1">
+                          <span className="text-gray-900 dark:text-white font-semibold mr-2">
+                            {lead.leadScore || 0}/100
+                          </span>
+                          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-300 ${
+                                (lead.leadScore || 0) >= 80 ? 'bg-green-500' :
+                                (lead.leadScore || 0) >= 60 ? 'bg-yellow-500' :
+                                (lead.leadScore || 0) >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                              }`}
+                              style={{ width: `${lead.leadScore || 0}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
                         <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned To</label>
                         <p className="text-gray-900 dark:text-white">{lead.assignedUserId || "Unassigned"}</p>
                       </div>
@@ -331,6 +349,24 @@ export default function LeadDetails() {
                         <p className="text-gray-900 dark:text-white mt-1">{lead.probability || 0}%</p>
                       </div>
                     )}
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Lead Score</label>
+                      <div className="flex items-center mt-2">
+                        <span className="text-lg font-semibold mr-3 min-w-[60px]">
+                          {lead.leadScore || 0}/100
+                        </span>
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                          <div 
+                            className={`h-3 rounded-full transition-all duration-300 ${
+                              (lead.leadScore || 0) >= 80 ? 'bg-green-500' :
+                              (lead.leadScore || 0) >= 60 ? 'bg-yellow-500' :
+                              (lead.leadScore || 0) >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${lead.leadScore || 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
