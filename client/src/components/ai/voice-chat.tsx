@@ -42,6 +42,12 @@ export default function VoiceChat({
 
   // Initialize WebSocket connection to OpenAI Realtime API
   const connectToVoiceAPI = async () => {
+    // Prevent multiple connections
+    if (wsRef.current || connectionStatus === "connecting") {
+      console.log("Connection already in progress or established");
+      return;
+    }
+    
     try {
       setConnectionStatus("connecting");
 
@@ -250,13 +256,15 @@ export default function VoiceChat({
 
   // Disconnect from voice API
   const disconnectVoice = () => {
-    console.log("Disconnecting voice...");
+    console.log("Disconnecting voice completely...");
     
-    // Stop all playing audio
-    if (audioSourcesRef.current) {
+    // Stop all playing audio immediately
+    if (audioSourcesRef.current && audioSourcesRef.current.size > 0) {
+      console.log(`Stopping ${audioSourcesRef.current.size} audio sources`);
       audioSourcesRef.current.forEach(source => {
         try {
           source.stop();
+          source.disconnect();
         } catch (e) {
           // Source may have already stopped
         }
@@ -265,25 +273,46 @@ export default function VoiceChat({
     }
     nextPlayTimeRef.current = 0;
     
+    // Close WebSocket connection
     if (wsRef.current) {
-      wsRef.current.close();
+      console.log("Closing WebSocket connection");
+      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+        wsRef.current.close();
+      }
       wsRef.current = null;
     }
+    
+    // Stop media stream tracks
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      console.log("Stopping media stream tracks");
+      mediaStreamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log(`Stopped track: ${track.kind}`);
+      });
       mediaStreamRef.current = null;
     }
+    
+    // Disconnect audio processor
     if (processorRef.current) {
+      console.log("Disconnecting audio processor");
       processorRef.current.disconnect();
       processorRef.current = null;
     }
+    
+    // Close audio context
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      console.log("Closing audio context");
+      if (audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+      }
       audioContextRef.current = null;
     }
+    
+    // Reset all state
     setIsConnected(false);
     setIsListening(false);
     setConnectionStatus("disconnected");
+    console.log("Voice completely disconnected");
   };
 
   // Convert audio format for transmission
@@ -367,18 +396,23 @@ export default function VoiceChat({
   useEffect(() => {
     console.log("Voice effect triggered - isEnabled:", isEnabled, "isConnected:", isConnected);
     
-    if (isEnabled && !isConnected) {
-      console.log("Auto-connecting to voice...");
-      connectToVoiceAPI();
-    } else if (!isEnabled && isConnected) {
-      console.log("Auto-disconnecting voice...");
-      disconnectVoice();
-    }
-    
-    return () => {
-      if (isConnected) {
+    if (isEnabled) {
+      if (!isConnected && !wsRef.current) {
+        console.log("Auto-connecting to voice...");
+        connectToVoiceAPI();
+      }
+    } else {
+      // Always disconnect when disabled, regardless of connection state
+      if (wsRef.current || mediaStreamRef.current || audioContextRef.current) {
+        console.log("Auto-disconnecting voice...");
         disconnectVoice();
       }
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      console.log("VoiceChat component unmounting, cleaning up...");
+      disconnectVoice();
     };
   }, [isEnabled]);
   

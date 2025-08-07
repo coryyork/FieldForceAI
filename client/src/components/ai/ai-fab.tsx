@@ -337,50 +337,57 @@ export default function AIFab() {
               </div>
             )}
             
-            {/* Voice Status */}
+            {/* Voice Status - only show UI when enabled */}
             {isVoiceEnabled && (
-              <>
-                <div className="text-xs text-center py-2 px-4 bg-electric-blue/5 rounded-lg border border-electric-blue/20">
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${isVoiceConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                    <span className="text-electric-blue font-medium">
-                      {isVoiceConnected ? 'Voice Active - Speak naturally' : 'Connecting voice...'}
-                    </span>
-                    {isVoiceConnected && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsMuted(!isMuted)}
-                        className="h-6 w-6 p-0"
-                      >
-                        {isMuted ? '🔇' : '🎤'}
-                      </Button>
-                    )}
-                  </div>
+              <div className="text-xs text-center py-2 px-4 bg-electric-blue/5 rounded-lg border border-electric-blue/20">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${isVoiceConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                  <span className="text-electric-blue font-medium">
+                    {isVoiceConnected ? 'Voice Active - Speak naturally' : 'Connecting voice...'}
+                  </span>
+                  {isVoiceConnected && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsMuted(!isMuted)}
+                      className="h-6 w-6 p-0"
+                    >
+                      {isMuted ? '🔇' : '🎤'}
+                    </Button>
+                  )}
                 </div>
-                
-                {/* Voice Chat Component (hidden but active) */}
-                <div className="hidden">
-                  <VoiceChat 
-                    isEnabled={isVoiceEnabled}
-                    onTranscript={(text) => {
-                      // Add user's spoken text to chat
-                      const userMessage: ChatMessage = {
-                        id: `user-${Date.now()}`,
-                        type: 'user',
-                        content: text,
-                        timestamp: new Date()
-                      };
-                      setMessages(prev => [...prev, userMessage]);
-                      // Process the spoken query
-                      handleSearch(text);
-                    }}
-                    onConnectionChange={(connected) => setIsVoiceConnected(connected)}
-                    onMuteChange={(muted) => setIsMuted(muted)}
-                  />
-                </div>
-              </>
+              </div>
             )}
+            
+            {/* Voice Chat Component - always rendered but only connects when enabled */}
+            <div className="hidden" key="voice-chat-singleton">
+              <VoiceChat 
+                isEnabled={isVoiceEnabled}
+                onTranscript={(text) => {
+                  // Only process transcripts when voice is enabled
+                  if (!isVoiceEnabled) return;
+                  
+                  // Add user's spoken text to chat
+                  const userMessage: ChatMessage = {
+                    id: `user-${Date.now()}`,
+                    type: 'user',
+                    content: text,
+                    timestamp: new Date()
+                  };
+                  setMessages(prev => [...prev, userMessage]);
+                  // Process the spoken query
+                  handleSearch(text);
+                }}
+                onConnectionChange={(connected) => {
+                  setIsVoiceConnected(connected);
+                  // Force disconnect state when voice is disabled
+                  if (!isVoiceEnabled && connected) {
+                    setIsVoiceConnected(false);
+                  }
+                }}
+                onMuteChange={(muted) => setIsMuted(muted)}
+              />
+            </div>
 
             {/* Search Input */}
             <div className="border-t border-gray-100 dark:border-gray-800 pt-4 mt-4">
