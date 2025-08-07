@@ -1136,16 +1136,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   wss.on('connection', async (ws, request) => {
     console.log('Voice WebSocket connection attempt');
     
-    // Import voice service dynamically to avoid circular dependency
-    const { handleVoiceWebSocket } = await import('./services/voiceService');
-    
-    // For development, we'll use temporary credentials
-    // In production, you'd want to verify the session properly
-    const userId = `temp-user-id-${Date.now()}`;
-    const companyId = 'temp-company-id';
-    
-    console.log('Voice WebSocket connection established');
-    handleVoiceWebSocket(ws, request, userId, companyId);
+    try {
+      // Import voice service dynamically to avoid circular dependency
+      const { handleVoiceWebSocket } = await import('./services/voiceService');
+      
+      // For now, we'll accept connections without strict authentication
+      // but log a warning that proper auth should be implemented
+      const userId = `voice-user-${Date.now()}`;
+      const companyId = 'voice-company';
+      
+      console.log('Voice WebSocket connection established (temporary auth)');
+      handleVoiceWebSocket(ws, request, userId, companyId);
+    } catch (error) {
+      console.error('WebSocket connection error:', error);
+      ws.close(1011, 'Server error');
+    }
   });
 
   return httpServer;

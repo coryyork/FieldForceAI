@@ -147,6 +147,14 @@ export async function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });
+
+  // GET /api/login returns login status
+  app.get("/api/login", (req, res) => {
+    res.json({ 
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user || null 
+    });
+  });
 }
 
 export function isAuthenticated(req: any, res: any, next: any) {
