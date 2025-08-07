@@ -45,32 +45,40 @@ export default function VoiceChat({
     try {
       setConnectionStatus("connecting");
 
-      // Request microphone permission
+      console.log("Requesting microphone access...");
+      
+      // Request microphone permission first
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          sampleRate: 24000
         } 
       });
+      
+      console.log("Microphone access granted!", stream.getTracks());
       mediaStreamRef.current = stream;
 
       // Initialize audio context for processing
       audioContextRef.current = new AudioContext({ sampleRate: 24000 });
       
-      // Resume audio context if suspended
+      // Resume audio context if suspended (required for many browsers)
       if (audioContextRef.current.state === 'suspended') {
+        console.log("Resuming audio context...");
         await audioContextRef.current.resume();
       }
+      
+      console.log("Audio context state:", audioContextRef.current.state);
       
       const source = audioContextRef.current.createMediaStreamSource(stream);
       
       // Create a processor for handling audio chunks
       processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
       
+      console.log("Connecting to WebSocket...");
       // Connect to backend WebSocket endpoint  
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${wsProtocol}//${window.location.host}/api/voice/connect`);
+      const ws = new WebSocket(`ws://localhost:5000/voice`);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -327,9 +335,13 @@ export default function VoiceChat({
 
   // Auto-connect when enabled
   useEffect(() => {
+    console.log("Voice effect triggered - isEnabled:", isEnabled, "isConnected:", isConnected);
+    
     if (isEnabled) {
+      console.log("Auto-connecting to voice...");
       connectToVoiceAPI();
     } else {
+      console.log("Auto-disconnecting voice...");
       disconnectVoice();
     }
     
