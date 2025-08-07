@@ -132,6 +132,11 @@ export default function AIFab() {
 
   const handleSearch = (query: string) => {
     console.log("AI search:", query);
+    // Don't trigger text search if voice is connected (OpenAI Realtime API is handling responses)
+    if (isVoiceConnected) {
+      console.log("Skipping text search - voice mode active");
+      return;
+    }
     searchMutation.mutate(query);
   };
 

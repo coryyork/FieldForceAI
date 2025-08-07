@@ -141,17 +141,19 @@ export default function VoiceChat({
             // Only process user transcripts, not AI responses
             if (data.role === "user") {
               console.log("User transcript:", data.text);
-              if (onTranscript && data.text) {
-                onTranscript(data.text);
-              }
+              // Don't trigger search when voice is connected - OpenAI handles the full conversation
+              // if (onTranscript && data.text) {
+              //   onTranscript(data.text);
+              // }
             }
           } else if (data.type === "transcript_delta") {
             // Skip AI response transcript deltas - only process user input
             if (data.role === "user") {
               console.log("User transcript delta:", data.text);
-              if (onTranscript && data.text) {
-                onTranscript(data.text);
-              }
+              // Don't trigger search when voice is connected - OpenAI handles the full conversation
+              // if (onTranscript && data.text) {
+              //   onTranscript(data.text);
+              // }
             }
           } else if (data.type === "error") {
             console.error("Voice API error:", data.error);
