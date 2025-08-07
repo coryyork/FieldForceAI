@@ -331,6 +331,17 @@ export default function CandidateDetails() {
                         Video Available
                       </Badge>
                     </div>
+                  ) : candidate.videoUrl?.startsWith('blob:') ? (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 text-center">
+                      <Video className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+                      <h4 className="text-lg font-medium text-amber-800 dark:text-amber-200 mb-2">Video Interview Submitted</h4>
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        The candidate recorded and submitted a video interview during their application process. The video file is no longer accessible as blob URLs expire after the browser session ends.
+                      </p>
+                      <div className="mt-3 text-xs text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-800 p-2 rounded">
+                        In a production environment, video files would be uploaded to permanent cloud storage (AWS S3, Google Cloud Storage, etc.) for persistent access.
+                      </div>
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       <video 
@@ -347,10 +358,10 @@ export default function CandidateDetails() {
                           }
                         }}
                       />
-                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 text-center hidden">
-                        <Video className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                        <p className="text-sm text-amber-800 dark:text-amber-200">
-                          Video interview was submitted but the file is no longer accessible. This can happen with temporary video files from the application process.
+                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center hidden">
+                        <Video className="w-8 h-8 text-red-600 mx-auto mb-2" />
+                        <p className="text-sm text-red-800 dark:text-red-200">
+                          Video interview file could not be loaded. The file may have been moved or deleted.
                         </p>
                       </div>
                     </div>
