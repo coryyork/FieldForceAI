@@ -22,7 +22,7 @@ const aiSettingsSchema = z.object({
   personalityKeywords: z.array(z.string()).default([]),
   autoSuggestions: z.boolean(),
   voiceEnabled: z.boolean(),
-  voiceId: z.enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]),
+  voiceId: z.enum(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"]),
   voiceSpeed: z.number().min(0.25).max(4.0),
 });
 
@@ -362,11 +362,13 @@ export default function AISettings() {
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                               {[
                                 { value: "alloy", label: "Alloy", desc: "Neutral and balanced" },
-                                { value: "echo", label: "Echo", desc: "Warm and engaging" },
-                                { value: "fable", label: "Fable", desc: "Expressive and dynamic" },
-                                { value: "onyx", label: "Onyx", desc: "Deep and authoritative" },
-                                { value: "nova", label: "Nova", desc: "Friendly and energetic" },
+                                { value: "ash", label: "Ash", desc: "Warm male voice" },
+                                { value: "ballad", label: "Ballad", desc: "Expressive and warm" },
+                                { value: "coral", label: "Coral", desc: "British accent" },
+                                { value: "echo", label: "Echo", desc: "Smooth and confident" },
+                                { value: "sage", label: "Sage", desc: "Deep and wise" },
                                 { value: "shimmer", label: "Shimmer", desc: "Clear and articulate" },
+                                { value: "verse", label: "Verse", desc: "British and refined" },
                               ].map((voice) => (
                                 <button
                                   key={voice.value}
