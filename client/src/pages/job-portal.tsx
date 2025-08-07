@@ -531,11 +531,12 @@ export default function JobPortal() {
                       )}
                     </div>
 
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-xl p-4 mb-6">
-                      <div className="flex items-center justify-between">
+                    {/* Application section with prominent Apply button */}
+                    <div className="bg-gradient-to-r from-electric-blue/5 to-indigo-600/5 dark:from-electric-blue/10 dark:to-indigo-600/10 border-2 border-electric-blue/20 rounded-xl p-6 mt-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="flex items-center space-x-4 text-sm">
                           {job.applicationDeadline && (
-                            <div className="flex items-center text-gray-600 dark:text-gray-400">
+                            <div className="flex items-center text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg">
                               <Calendar className="w-4 h-4 mr-2" />
                               Apply by {format(new Date(job.applicationDeadline), "MMM d, yyyy")}
                             </div>
@@ -561,11 +562,12 @@ export default function JobPortal() {
                         }}>
                           <DialogTrigger asChild>
                             <Button 
-                              className="bg-gradient-to-r from-electric-blue to-indigo-600 hover:from-electric-blue hover:to-indigo-700 text-white font-semibold px-6 py-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 group"
+                              size="lg"
+                              className="bg-gradient-to-r from-electric-blue to-indigo-600 hover:from-electric-blue hover:to-indigo-700 text-white font-bold px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-105 group shadow-lg"
                               onClick={() => setSelectedJob(job)}
                             >
                               Apply Now
-                              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                             </Button>
                           </DialogTrigger>
                         </Dialog>
