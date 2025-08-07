@@ -78,7 +78,8 @@ export default function VoiceChat({
       
       console.log("Connecting to WebSocket...");
       // Connect to backend WebSocket endpoint  
-      const ws = new WebSocket(`ws://localhost:5000/voice`);
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${wsProtocol}//${window.location.host}/api/voice/connect`);
       wsRef.current = ws;
 
       ws.onopen = () => {

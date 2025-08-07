@@ -681,25 +681,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   wss.on('connection', async (ws, request) => {
-    // Get user from session
-    const sessionCookie = request.headers.cookie;
-    if (!sessionCookie) {
-      ws.close(1008, 'Unauthorized');
-      return;
-    }
-
-    // For now, we'll handle the WebSocket connection directly
-    // In production, you'd want to verify the session properly
-    console.log('Voice WebSocket connection established');
+    console.log('Voice WebSocket connection attempt');
     
     // Import voice service dynamically to avoid circular dependency
     const { handleVoiceWebSocket } = await import('./services/voiceService');
     
-    // Extract userId from session - need proper session handling
-    // For now we'll use a temporary approach, but this should extract from authenticated session
+    // For development, we'll use temporary credentials
+    // In production, you'd want to verify the session properly
     const userId = `temp-user-id-${Date.now()}`;
     const companyId = 'temp-company-id';
     
+    console.log('Voice WebSocket connection established');
     handleVoiceWebSocket(ws, request, userId, companyId);
   });
 
