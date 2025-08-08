@@ -12,6 +12,8 @@ Field Force 2 is a comprehensive multi-tenant SaaS business management platform 
 - **Role-based Permissions**: Enforced admin/owner-only access to team management features
 - **Secure Invitation Flow**: Token-based invitation links with 7-day expiration and one-time use
 - **Custom Authentication**: Username/password login system replacing Replit Auth
+- **Authentication Migration Complete**: Fully removed Replit Auth system, fixed /api/login endpoint conflicts
+- **Deployment Ready**: Application ready for deployment with custom domain www.ff.army
 
 - **Candidate Pipeline Stages**: Complete stage tracking system with 6 stages: Applied, 1st Round Interview, 2nd Round Interview, Offered, Accepted, Rejected
 - **Stage Management UI**: Interactive stage selector component with color-coded badges and icons for each recruitment stage
