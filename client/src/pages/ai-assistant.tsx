@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Brain, Search, Lightbulb, Users, FileText, CheckSquare } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface SearchResult {
   query: string;
@@ -35,6 +36,7 @@ interface SearchResult {
 export default function AIAssistant() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [chatHistory, setChatHistory] = useState<Array<{type: 'user' | 'ai', message: string}>>([]);
 
@@ -47,7 +49,7 @@ export default function AIAssistant() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        setLocation("/auth");
       }, 500);
       return;
     }
@@ -108,7 +110,7 @@ export default function AIAssistant() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          setLocation("/auth");
         }, 500);
         return;
       }

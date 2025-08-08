@@ -34,7 +34,7 @@ export default function LeadDetails() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        setLocation("/auth");
       }, 500);
       return;
     }
@@ -74,7 +74,7 @@ export default function LeadDetails() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          setLocation("/auth");
         }, 500);
         return;
       }

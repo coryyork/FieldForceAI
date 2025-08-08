@@ -62,7 +62,7 @@ export default function CRM() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          setLocation("/auth");
         }, 500);
         return;
       }
