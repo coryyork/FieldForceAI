@@ -27,6 +27,10 @@ import NotFound from "@/pages/not-found";
 function Router() {
   const { user, isLoading } = useAuth();
   
+  if (isLoading) {
+    return null;
+  }
+
   // Show onboarding if user is authenticated but doesn't have a company
   const needsOnboarding = user && !user.companyId;
 

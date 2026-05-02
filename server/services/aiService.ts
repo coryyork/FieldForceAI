@@ -1,8 +1,12 @@
 import OpenAI from "openai";
 import { storage } from "../storage";
 
+if (!process.env.OPENAI_API_KEY) {
+  console.warn("WARNING: OPENAI_API_KEY is not set. AI features will return a 503 error.");
+}
+
 const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key" 
+  apiKey: process.env.OPENAI_API_KEY || "missing_key"
 });
 
 export class AIService {

@@ -1,9 +1,9 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
+import type { Express, Request, Response, NextFunction } from "express";
+import { createServer, type Server, type IncomingMessage, type ServerResponse } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { db } from "./db";
-import { setupAuth, isAuthenticated } from "./auth";
+import { setupAuth, isAuthenticated, exportedSessionMiddleware, exportedPassportInit, exportedPassportSession } from "./auth";
 import { aiService } from "./services/aiService";
 import { 
   insertLeadSchema, 
@@ -262,6 +262,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/documents/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      const updates = insertDocumentSchema.partial().parse(req.body);
+      const document = await storage.updateDocument(req.params.id, user.companyId, updates);
+
+      await storage.createActivity({
+        companyId: user.companyId,
+        userId: user.id,
+        type: "document_updated",
+        description: `Updated document: ${document.title}`,
+        entityType: "document",
+        entityId: document.id,
+      });
+
+      res.json(document);
+    } catch (error) {
+      console.error("Error updating document:", error);
+      res.status(500).json({ message: "Failed to update document" });
+    }
+  });
+
+  app.delete("/api/documents/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      await storage.deleteDocument(req.params.id, user.companyId);
+
+      await storage.createActivity({
+        companyId: user.companyId,
+        userId: user.id,
+        type: "document_deleted",
+        description: `Deleted document`,
+        entityType: "document",
+        entityId: req.params.id,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      res.status(500).json({ message: "Failed to delete document" });
+    }
+  });
+
   // Task routes
   app.get("/api/tasks", isAuthenticated, async (req: any, res) => {
     try {
@@ -336,6 +387,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating task:", error);
       res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+
+  app.delete("/api/tasks/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user?.companyId) {
+        return res.status(400).json({ message: "User not associated with a company" });
+      }
+
+      await storage.deleteTask(req.params.id, user.companyId);
+
+      await storage.createActivity({
+        companyId: user.companyId,
+        userId: user.id,
+        type: "task_deleted",
+        description: `Deleted task`,
+        entityType: "task",
+        entityId: req.params.id,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      res.status(500).json({ message: "Failed to delete task" });
     }
   });
 
@@ -603,6 +679,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI search routes
   app.post("/api/ai/search", isAuthenticated, async (req: any, res) => {
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(503).json({ message: "AI features are unavailable: OPENAI_API_KEY is not configured" });
+    }
     try {
       const user = req.user;
       if (!user?.companyId) {
@@ -623,6 +702,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/ai/chat", isAuthenticated, async (req: any, res) => {
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(503).json({ message: "AI features are unavailable: OPENAI_API_KEY is not configured" });
+    }
     try {
       const user = req.user;
       if (!user?.companyId) {
@@ -1133,20 +1215,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     path: '/api/voice/connect'
   });
 
+  interface AuthenticatedUpgradeRequest extends IncomingMessage {
+    user?: Express.User;
+    session?: Record<string, unknown>;
+  }
+
   wss.on('connection', async (ws, request) => {
     console.log('Voice WebSocket connection attempt');
     
     try {
-      // Import voice service dynamically to avoid circular dependency
+      if (!exportedSessionMiddleware || !exportedPassportInit || !exportedPassportSession) {
+        console.error('Voice WebSocket: auth middleware not initialised');
+        ws.close(4401, 'Unauthorized');
+        return;
+      }
+
+      const req = request as AuthenticatedUpgradeRequest;
+      const res = {} as ServerResponse;
+
+      await new Promise<void>((resolve, reject) => {
+        exportedSessionMiddleware!(req as Request, res as Response, ((err?: unknown) => { err ? reject(err) : resolve(); }) as NextFunction);
+      });
+      await new Promise<void>((resolve, reject) => {
+        exportedPassportInit!(req as Request, res as Response, ((err?: unknown) => { err ? reject(err) : resolve(); }) as NextFunction);
+      });
+      await new Promise<void>((resolve, reject) => {
+        exportedPassportSession!(req as Request, res as Response, ((err?: unknown) => { err ? reject(err) : resolve(); }) as NextFunction);
+      });
+
+      const authedUser = req.user;
+      if (!authedUser || !authedUser.id || !authedUser.companyId) {
+        console.warn('Voice WebSocket rejected: unauthenticated connection');
+        ws.close(4401, 'Unauthorized');
+        return;
+      }
+
       const { handleVoiceWebSocket } = await import('./services/voiceService');
-      
-      // For now, we'll accept connections without strict authentication
-      // but log a warning that proper auth should be implemented
-      const userId = `voice-user-${Date.now()}`;
-      const companyId = 'voice-company';
-      
-      console.log('Voice WebSocket connection established (temporary auth)');
-      handleVoiceWebSocket(ws, request, userId, companyId);
+      console.log(`Voice WebSocket connection established for user ${authedUser.id}`);
+      handleVoiceWebSocket(ws, request, authedUser.id, authedUser.companyId);
     } catch (error) {
       console.error('WebSocket connection error:', error);
       ws.close(1011, 'Server error');

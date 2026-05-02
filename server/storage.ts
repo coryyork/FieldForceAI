@@ -671,8 +671,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteInvitation(id: string, companyId: string): Promise<void> {
     await db
-      .delete()
-      .from(invitations)
+      .delete(invitations)
       .where(and(
         eq(invitations.id, id),
         eq(invitations.companyId, companyId)

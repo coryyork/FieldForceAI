@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, RequestHandler } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -16,6 +16,10 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-session-secret-' + randomBytes(16).toString('hex');
+
+export let exportedSessionMiddleware: RequestHandler | null = null;
+export let exportedPassportInit: RequestHandler | null = null;
+export let exportedPassportSession: RequestHandler | null = null;
 
 export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -46,7 +50,7 @@ export async function setupAuth(app: Express) {
     }),
     cookie: {
       httpOnly: true,
-      secure: false, // Always false for development
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: sessionTtl,
       path: '/', // Ensure cookie works on all paths
@@ -54,9 +58,19 @@ export async function setupAuth(app: Express) {
   };
 
   app.set("trust proxy", 1);
-  app.use(session(sessionSettings));
-  app.use(passport.initialize());
-  app.use(passport.session());
+
+  const sessionMiddlewareInstance = session(sessionSettings);
+  const passportInitMiddleware = passport.initialize();
+  const passportSessionMiddleware = passport.session();
+
+  // Export middleware for use in non-Express contexts (e.g. WebSocket)
+  exportedSessionMiddleware = sessionMiddlewareInstance;
+  exportedPassportInit = passportInitMiddleware;
+  exportedPassportSession = passportSessionMiddleware;
+
+  app.use(sessionMiddlewareInstance);
+  app.use(passportInitMiddleware);
+  app.use(passportSessionMiddleware);
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
