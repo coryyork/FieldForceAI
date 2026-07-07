@@ -26,7 +26,7 @@ export default function VoiceChat({
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const processorRef = useRef<AudioWorkletNode | null>(null);
 
   // Get AI settings including voice preferences
   const { data: aiSettings } = useQuery<{
@@ -78,15 +78,39 @@ export default function VoiceChat({
       console.log("Audio context state:", audioContextRef.current.state);
       
       const source = audioContextRef.current.createMediaStreamSource(stream);
-      
-      // Create a processor for handling audio chunks
-      processorRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
-      
+
+      // Load the AudioWorklet processor module
+      await audioContextRef.current.audioWorklet.addModule("/audio-processor.js");
+
+      // Create AudioWorkletNode to replace the deprecated ScriptProcessorNode
+      processorRef.current = new AudioWorkletNode(audioContextRef.current, "audio-capture-processor");
+
       console.log("Connecting to WebSocket...");
       // Connect to backend WebSocket endpoint  
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const ws = new WebSocket(`${wsProtocol}//${window.location.host}/api/voice/connect`);
       wsRef.current = ws;
+
+      // Handle audio data messages from the worklet
+      processorRef.current.port.onmessage = (event) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          const inputData: Float32Array = event.data.audioData;
+
+          // Convert and send immediately - no buffering for real-time response
+          const pcm16 = convertFloat32ToPCM16(inputData);
+          const uint8Array = new Uint8Array(pcm16.buffer);
+          let binaryString = '';
+          for (let i = 0; i < uint8Array.length; i++) {
+            binaryString += String.fromCharCode(uint8Array[i]);
+          }
+
+          // Send audio chunk directly to OpenAI for immediate processing
+          ws.send(JSON.stringify({
+            type: "input_audio_buffer.append",
+            audio: btoa(binaryString)
+          }));
+        }
+      };
 
       ws.onopen = () => {
         console.log("Voice connection established");
@@ -204,33 +228,17 @@ export default function VoiceChat({
         setIsListening(false);
       };
 
-      // Process and send audio chunks with minimal buffering for faster response
-      processorRef.current.onaudioprocess = (e) => {
-        // Only process if WebSocket is ready
-        if (ws.readyState === WebSocket.OPEN) {
-          const inputData = e.inputBuffer.getChannelData(0);
-          
-          // Convert and send immediately - no buffering for real-time response
-          const pcm16 = convertFloat32ToPCM16(inputData);
-          const uint8Array = new Uint8Array(pcm16.buffer);
-          let binaryString = '';
-          for (let i = 0; i < uint8Array.length; i++) {
-            binaryString += String.fromCharCode(uint8Array[i]);
-          }
-          
-          // Send audio chunk directly to OpenAI for immediate processing
-          ws.send(JSON.stringify({
-            type: "input_audio_buffer.append",
-            audio: btoa(binaryString)
-          }));
-        }
-
-      };
-
-      // Connect the audio nodes
+      // Connect the audio nodes.
+      // The worklet must be part of a rendered (pulled) graph so process() fires
+      // reliably in all browsers (Chrome, Firefox, Safari). Route through a silent
+      // gain node (gain=0) to destination to satisfy the pull model without
+      // producing any audible output.
+      const silentGain = audioContextRef.current.createGain();
+      silentGain.gain.value = 0;
       source.connect(processorRef.current);
-      processorRef.current.connect(audioContextRef.current.destination);
-      
+      processorRef.current.connect(silentGain);
+      silentGain.connect(audioContextRef.current.destination);
+
       console.log("Audio processing connected");
 
     } catch (error) {
