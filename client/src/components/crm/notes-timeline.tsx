@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Phone, Calendar, Mail, Edit, Trash2, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import VoiceCommentButton from "@/components/shared/voice-comment-button";
 
 interface Note {
   id: string;
@@ -178,6 +179,21 @@ export default function NotesTimeline({ leadId }: NotesTimelineProps) {
     }
   };
 
+  const appendVoiceTranscript = (text: string) => {
+    setNewNote((current) => ({
+      ...current,
+      content: current.content ? `${current.content} ${text}` : text,
+    }));
+  };
+
+  const handleVoiceError = (message: string) => {
+    toast({
+      title: "Voice comment failed",
+      description: message,
+      variant: "destructive",
+    });
+  };
+
   const handleAddNote = () => {
     if (!newNote.content.trim()) return;
     createNoteMutation.mutate(newNote);
@@ -252,12 +268,19 @@ export default function NotesTimeline({ leadId }: NotesTimelineProps) {
                 </SelectContent>
               </Select>
               
-              <Textarea
-                placeholder="Add your note here..."
-                value={newNote.content}
-                onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
-                rows={3}
-              />
+              <div className="flex items-start gap-2">
+                <Textarea
+                  placeholder="Add your note here... Hold the mic to talk."
+                  value={newNote.content}
+                  onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                  rows={3}
+                  className="flex-1"
+                />
+                <VoiceCommentButton
+                  onTranscript={appendVoiceTranscript}
+                  onError={handleVoiceError}
+                />
+              </div>
               
               <div className="flex justify-end space-x-2">
                 <Button

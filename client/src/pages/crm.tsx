@@ -18,7 +18,7 @@ import { useLocation } from "wouter";
 
 export default function CRM() {
   const { toast } = useToast();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [isNewLeadOpen, setIsNewLeadOpen] = useState(false);

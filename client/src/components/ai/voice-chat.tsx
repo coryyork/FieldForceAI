@@ -1,46 +1,31 @@
 import { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, Phone, PhoneOff, Volume2, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
 
 interface VoiceChatProps {
   isEnabled: boolean;
-  onTranscript?: (text: string) => void;
+  isMuted?: boolean;
+  onVoiceMessage?: (message: { role: "user" | "assistant"; text: string; isFinal: boolean }) => void;
   onConnectionChange?: (connected: boolean) => void;
-  onMuteChange?: (muted: boolean) => void;
 }
 
 export default function VoiceChat({ 
   isEnabled, 
-  onTranscript, 
+  isMuted = false,
+  onVoiceMessage,
   onConnectionChange,
-  onMuteChange 
 }: VoiceChatProps) {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
-  const [isMuted, setIsMuted] = useState(false); // Note: muted state is for UI only, audio always sent
   const [isListening, setIsListening] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<AudioWorkletNode | null>(null);
+  const isMutedRef = useRef(isMuted);
+  const assistantTranscriptRef = useRef("");
 
-  // Get AI settings including voice preferences
-  const { data: aiSettings } = useQuery<{
-    aiName?: string;
-    personalityKeywords?: string;
-    voiceId?: string;
-    voiceEnabled?: boolean;
-    voiceSpeed?: number;
-  }>({
-    queryKey: ["/api/ai-settings"],
-    retry: false,
-  });
-
-  // Initialize WebSocket connection to OpenAI Realtime API
+  // Initialize WebSocket connection to Grok Voice via backend proxy
   const connectToVoiceAPI = async () => {
     // Prevent multiple connections
     if (wsRef.current || connectionStatus === "connecting") {
@@ -93,7 +78,7 @@ export default function VoiceChat({
 
       // Handle audio data messages from the worklet
       processorRef.current.port.onmessage = (event) => {
-        if (ws.readyState === WebSocket.OPEN) {
+        if (ws.readyState === WebSocket.OPEN && !isMutedRef.current) {
           const inputData: Float32Array = event.data.audioData;
 
           // Convert and send immediately - no buffering for real-time response
@@ -104,7 +89,7 @@ export default function VoiceChat({
             binaryString += String.fromCharCode(uint8Array[i]);
           }
 
-          // Send audio chunk directly to OpenAI for immediate processing
+          // Send audio chunk to the voice proxy for immediate processing
           ws.send(JSON.stringify({
             type: "input_audio_buffer.append",
             audio: btoa(binaryString)
@@ -118,56 +103,17 @@ export default function VoiceChat({
         setIsConnected(true);
         setIsListening(true);
         
-        // Reset audio timing for fresh session
         nextPlayTimeRef.current = 0;
         audioSourcesRef.current.clear();
+        assistantTranscriptRef.current = "";
 
-        // Wait a moment for connection to stabilize then send session update
-        setTimeout(() => {
+        const keepAlive = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-              type: "session.update",
-              session: {
-                voice: aiSettings?.voiceId || "alloy",
-                instructions: (() => {
-                  const name = aiSettings?.aiName || "Field Force Assistant";
-                  let personality = "";
-                  if (aiSettings?.personalityKeywords) {
-                    try {
-                      const keywords = JSON.parse(aiSettings.personalityKeywords);
-                      personality = `Your personality traits: ${keywords.join(", ")}. `;
-                    } catch {
-                      // Invalid JSON, ignore
-                    }
-                  }
-                  return `Your name is ${name}. You are an AI assistant for a business management platform called Field Force 2. ${personality}Help users with their leads, tasks, documents, and business questions. When asked for your name, always respond with "${name}". Always respond in English regardless of the input language.`;
-                })(),
-                input_audio_format: "pcm16",
-                output_audio_format: "pcm16",
-                input_audio_transcription: { model: "whisper-1" },
-                turn_detection: {
-                  type: "server_vad",
-                  threshold: 0.5,
-                  prefix_padding_ms: 300,
-                  silence_duration_ms: 500,  // Balanced for natural conversation
-                  create_response: true,
-                  interrupt_response: true  // Allow interrupting AI when user starts speaking
-                },
-                modalities: ["text", "audio"]
-              }
-            }));
-            console.log("Session configuration sent");
-            
-            // Set up keep-alive ping
-            const keepAlive = setInterval(() => {
-              if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'ping' }));
-              } else {
-                clearInterval(keepAlive);
-              }
-            }, 30000); // ping every 30 seconds
+            ws.send(JSON.stringify({ type: 'ping' }));
+          } else {
+            clearInterval(keepAlive);
           }
-        }, 100);
+        }, 30000);
       };
 
       ws.onmessage = async (event) => {
@@ -183,23 +129,26 @@ export default function VoiceChat({
             console.log("User started speaking - stopping AI audio");
             stopAllAudio();
           } else if (data.type === "transcript") {
-            // Only process user transcripts, not AI responses
-            if (data.role === "user") {
-              console.log("User transcript:", data.text);
-              // Don't trigger search when voice is connected - OpenAI handles the full conversation
-              // if (onTranscript && data.text) {
-              //   onTranscript(data.text);
-              // }
+            if (!data.text?.trim()) return;
+
+            if (data.role === "assistant") {
+              assistantTranscriptRef.current = "";
             }
+
+            onVoiceMessage?.({
+              role: data.role === "assistant" ? "assistant" : "user",
+              text: data.text,
+              isFinal: true,
+            });
           } else if (data.type === "transcript_delta") {
-            // Skip AI response transcript deltas - only process user input
-            if (data.role === "user") {
-              console.log("User transcript delta:", data.text);
-              // Don't trigger search when voice is connected - OpenAI handles the full conversation
-              // if (onTranscript && data.text) {
-              //   onTranscript(data.text);
-              // }
-            }
+            if (data.role !== "assistant" || !data.text) return;
+
+            assistantTranscriptRef.current += data.text;
+            onVoiceMessage?.({
+              role: "assistant",
+              text: assistantTranscriptRef.current,
+              isFinal: false,
+            });
           } else if (data.type === "error") {
             console.error("Voice API error:", data.error);
             toast({
@@ -424,6 +373,20 @@ export default function VoiceChat({
     }
   };
 
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+
+    if (isMuted && mediaStreamRef.current) {
+      mediaStreamRef.current.getAudioTracks().forEach((track) => {
+        track.enabled = false;
+      });
+    } else if (!isMuted && mediaStreamRef.current) {
+      mediaStreamRef.current.getAudioTracks().forEach((track) => {
+        track.enabled = true;
+      });
+    }
+  }, [isMuted]);
+
   // Auto-connect when enabled
   useEffect(() => {
     console.log("Voice effect triggered - isEnabled:", isEnabled, "isConnected:", isConnected);
@@ -454,14 +417,6 @@ export default function VoiceChat({
       onConnectionChange(isConnected);
     }
   }, [isConnected, onConnectionChange]);
-  
-  // Notify parent of mute changes
-  useEffect(() => {
-    if (onMuteChange) {
-      onMuteChange(isMuted);
-    }
-  }, [isMuted, onMuteChange]);
 
-  // This is a headless component - no UI
   return null;
 }

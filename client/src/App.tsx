@@ -22,6 +22,7 @@ import JobPortal from "@/pages/job-portal";
 import Settings from "@/pages/settings";
 import TeamPage from "@/pages/team";
 import InvitationPage from "@/pages/invitation";
+import Analytics from "@/pages/analytics";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -59,6 +60,7 @@ function Router() {
       <ProtectedRoute path="/candidates/:id" component={CandidateDetails} />
       <ProtectedRoute path="/settings" component={Settings} />
       <ProtectedRoute path="/team" component={TeamPage} />
+      <ProtectedRoute path="/analytics" component={Analytics} />
       
       <Route component={NotFound} />
     </Switch>

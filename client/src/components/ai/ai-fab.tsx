@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, MessageCircle, X, User, Loader2, Mic } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
 import AISearchBar from "./ai-search-bar";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -25,6 +24,7 @@ export default function AIFab() {
   const [isVoiceConnected, setIsVoiceConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const streamingAssistantIdRef = useRef<string | null>(null);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -32,12 +32,64 @@ export default function AIFab() {
 
   // Get AI settings for voice configuration
   const { data: aiSettings } = useQuery<{
+    aiName?: string;
     voiceEnabled?: boolean;
     voiceId?: string;
     personalityKeywords?: string;
   }>({
     queryKey: ["/api/ai-settings"],
     retry: false,
+  });
+
+  const aiName = aiSettings?.aiName || "AI Assistant";
+
+  const chatMutation = useMutation({
+    mutationFn: async (message: string) => {
+      const history = messages.slice(-10).map((m) => ({
+        role: m.type === "user" ? "user" : "assistant",
+        content: m.content,
+      }));
+
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ message, history }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    },
+    onSuccess: (data, message) => {
+      const userMessage: ChatMessage = {
+        id: `user-${Date.now()}`,
+        type: "user",
+        content: message,
+        timestamp: new Date(),
+      };
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: "assistant",
+        content: data.response,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, userMessage, assistantMessage]);
+    },
+    onError: (error) => {
+      console.error("AI chat error:", error);
+      const errorMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
+        type: "assistant",
+        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : "Unknown error"}. Please try again.`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    },
   });
 
   const searchMutation = useMutation({
@@ -132,7 +184,7 @@ export default function AIFab() {
 
   const handleSearch = (query: string) => {
     console.log("AI search:", query);
-    // Don't trigger text search if voice is connected (OpenAI Realtime API is handling responses)
+    // Don't trigger text search if voice is connected (Grok Voice is handling responses)
     if (isVoiceConnected) {
       console.log("Skipping text search - voice mode active");
       return;
@@ -141,9 +193,8 @@ export default function AIFab() {
   };
 
   const handleChat = (message: string) => {
-    console.log("AI chat:", message);
-    // For now, treat chat the same as search
-    handleSearch(message);
+    if (isVoiceConnected) return;
+    chatMutation.mutate(message);
   };
 
   const openAIAssistant = () => {
@@ -151,7 +202,52 @@ export default function AIFab() {
   };
 
   const clearChat = () => {
+    streamingAssistantIdRef.current = null;
     setMessages([]);
+  };
+
+  const handleVoiceMessage = (message: { role: "user" | "assistant"; text: string; isFinal: boolean }) => {
+    if (!message.text.trim()) return;
+
+    if (message.role === "user") {
+      streamingAssistantIdRef.current = null;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `voice-user-${Date.now()}`,
+          type: "user",
+          content: message.text,
+          timestamp: new Date(),
+        },
+      ]);
+      return;
+    }
+
+    if (streamingAssistantIdRef.current) {
+      setMessages((prev) =>
+        prev.map((entry) =>
+          entry.id === streamingAssistantIdRef.current
+            ? { ...entry, content: message.text }
+            : entry,
+        ),
+      );
+    } else {
+      const id = `voice-assistant-${Date.now()}`;
+      streamingAssistantIdRef.current = id;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id,
+          type: "assistant",
+          content: message.text,
+          timestamp: new Date(),
+        },
+      ]);
+    }
+
+    if (message.isFinal) {
+      streamingAssistantIdRef.current = null;
+    }
   };
 
 
@@ -195,7 +291,7 @@ export default function AIFab() {
             <DialogTitle className="flex items-center justify-between text-base font-semibold">
               <div className="flex items-center">
                 <Bot className="w-5 h-5 mr-2 text-electric-blue" />
-                AI Assistant
+                {aiName}
               </div>
               <div className="flex items-center space-x-1">
                 <Button
@@ -275,7 +371,7 @@ export default function AIFab() {
                       </div>
                     </div>
                   ))}
-                  {searchMutation.isPending && (
+                  {(searchMutation.isPending || chatMutation.isPending) && (
                     <div className="flex justify-start">
                       <div className="flex items-start gap-2">
                         <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
@@ -298,7 +394,7 @@ export default function AIFab() {
                   <Bot className="w-8 h-8 text-electric-blue" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-lg text-gray-900 dark:text-gray-100">AI Assistant</h3>
+                  <h3 className="font-medium text-lg text-gray-900 dark:text-gray-100">{aiName}</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                     Ask me about your business data, leads, tasks, or anything else!
                   </p>
@@ -363,29 +459,14 @@ export default function AIFab() {
             <div className="hidden" key="voice-chat-singleton">
               <VoiceChat 
                 isEnabled={isVoiceEnabled}
-                onTranscript={(text) => {
-                  // Only process transcripts when voice is enabled
-                  if (!isVoiceEnabled) return;
-                  
-                  // Add user's spoken text to chat
-                  const userMessage: ChatMessage = {
-                    id: `user-${Date.now()}`,
-                    type: 'user',
-                    content: text,
-                    timestamp: new Date()
-                  };
-                  setMessages(prev => [...prev, userMessage]);
-                  // Process the spoken query
-                  handleSearch(text);
-                }}
+                isMuted={isMuted}
+                onVoiceMessage={handleVoiceMessage}
                 onConnectionChange={(connected) => {
                   setIsVoiceConnected(connected);
-                  // Force disconnect state when voice is disabled
                   if (!isVoiceEnabled && connected) {
                     setIsVoiceConnected(false);
                   }
                 }}
-                onMuteChange={(muted) => setIsMuted(muted)}
               />
             </div>
 
@@ -396,7 +477,7 @@ export default function AIFab() {
                 onChat={handleChat}
                 placeholder={isVoiceEnabled ? "Type or speak your question..." : "Ask AI about your business data..."}
                 compact
-                isLoading={searchMutation.isPending}
+                isLoading={searchMutation.isPending || chatMutation.isPending}
               />
             </div>
           </div>

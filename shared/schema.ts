@@ -274,7 +274,7 @@ export const aiSettings = pgTable("ai_settings", {
   personalityKeywords: text("personality_keywords"), // JSON array of keywords
   autoSuggestions: boolean("auto_suggestions").default(true),
   voiceEnabled: boolean("voice_enabled").default(false),
-  voiceId: varchar("voice_id").default("alloy"), // alloy, echo, fable, onyx, nova, shimmer
+  voiceId: varchar("voice_id").default("eve"), // eve, ara, rex, sal, leo (Grok Voice)
   voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).default("1.0"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

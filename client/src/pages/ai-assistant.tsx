@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Brain, Search, Lightbulb, Users, FileText, CheckSquare } from "lucide-react";
+import { Brain, Search, Lightbulb, Users, FileText, CheckSquare, Briefcase } from "lucide-react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
 interface SearchResult {
   query: string;
@@ -30,6 +31,7 @@ interface SearchResult {
     leads: any[];
     documents: any[];
     tasks: any[];
+    jobOpenings?: any[];
   };
 }
 
@@ -39,6 +41,12 @@ export default function AIAssistant() {
   const [, setLocation] = useLocation();
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [chatHistory, setChatHistory] = useState<Array<{type: 'user' | 'ai', message: string}>>([]);
+
+  const { data: aiSettings } = useQuery<{ aiName?: string }>({
+    queryKey: ["/api/ai-settings"],
+    retry: false,
+  });
+  const aiName = aiSettings?.aiName || "AI Assistant";
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -91,9 +99,14 @@ export default function AIAssistant() {
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
+      const history = chatHistory.slice(-10).map((m) => ({
+        role: m.type === "user" ? "user" : "assistant",
+        content: m.message,
+      }));
+
       return await apiRequest("/api/ai/chat", {
         method: "POST",
-        body: { message },
+        body: { message, history },
       });
     },
     onSuccess: (data, message) => {
@@ -156,7 +169,7 @@ export default function AIAssistant() {
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <Brain className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Assistant</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">{aiName}</h1>
             <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-sm sm:text-base px-4">
               Search across your CRM data, knowledge base, and business metrics with natural language. 
               Ask questions and get intelligent insights about your business.
@@ -254,7 +267,7 @@ export default function AIAssistant() {
               </Card>
 
               {/* Results Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Leads Results */}
                 {searchResults.rawResults.leads.length > 0 && (
                   <Card>
@@ -323,6 +336,31 @@ export default function AIAssistant() {
                             <div className="flex justify-between items-center mt-2">
                               <Badge variant="outline">{task.status}</Badge>
                               <Badge variant="secondary">{task.priority}</Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                {/* Job Openings Results */}
+                {(searchResults.rawResults.jobOpenings?.length ?? 0) > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Briefcase className="w-5 h-5 mr-2" />
+                        Jobs ({searchResults.rawResults.jobOpenings!.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {searchResults.rawResults.jobOpenings!.map((job: any) => (
+                          <div key={job.id} className="p-3 border rounded-lg">
+                            <h4 className="font-semibold text-sm">{job.title}</h4>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">{job.department}</p>
+                            <div className="flex justify-between items-center mt-2">
+                              <Badge variant="outline">{job.status}</Badge>
+                              <span className="text-xs text-gray-500">{job.location}</span>
                             </div>
                           </div>
                         ))}

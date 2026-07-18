@@ -711,16 +711,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User not associated with a company" });
       }
 
-      const { message } = req.body;
+      const { message, history } = req.body;
       if (!message) {
         return res.status(400).json({ message: "Message is required" });
       }
 
-      const response = await aiService.chatWithAI(user.companyId, message);
+      const response = await aiService.chatWithAI(
+        user.companyId,
+        message,
+        Array.isArray(history) ? history : [],
+      );
       res.json({ response });
     } catch (error) {
       console.error("Error in AI chat:", error);
       res.status(500).json({ message: "Failed to process AI chat" });
+    }
+  });
+
+  app.post("/api/voice/transcribe", isAuthenticated, async (req: any, res) => {
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(503).json({ message: "AI features are unavailable: OPENAI_API_KEY is not configured" });
+    }
+
+    try {
+      const { audio, mimeType, filename } = req.body;
+      if (!audio || typeof audio !== "string") {
+        return res.status(400).json({ message: "Audio data is required" });
+      }
+
+      const buffer = Buffer.from(audio, "base64");
+      const { transcribeAudio } = await import("./services/transcriptionService");
+      const text = await transcribeAudio(
+        buffer,
+        typeof mimeType === "string" ? mimeType : "",
+        typeof filename === "string" ? filename : undefined,
+      );
+
+      res.json({ text });
+    } catch (error: any) {
+      console.error("Error transcribing voice comment:", error);
+      const message =
+        error?.error?.message ||
+        error?.message ||
+        "Failed to transcribe voice comment";
+      res.status(400).json({ message });
     }
   });
 

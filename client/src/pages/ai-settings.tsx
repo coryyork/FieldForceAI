@@ -22,8 +22,8 @@ const aiSettingsSchema = z.object({
   personalityKeywords: z.array(z.string()).default([]),
   autoSuggestions: z.boolean(),
   voiceEnabled: z.boolean(),
-  voiceId: z.enum(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"]),
-  voiceSpeed: z.number().min(0.25).max(4.0),
+  voiceId: z.enum(["eve", "ara", "rex", "sal", "leo"]),
+  voiceSpeed: z.number().min(0.7).max(1.5),
 });
 
 type AISettingsData = z.infer<typeof aiSettingsSchema>;
@@ -41,10 +41,33 @@ export default function AISettings() {
       personalityKeywords: [],
       autoSuggestions: true,
       voiceEnabled: false,
-      voiceId: "alloy",
+      voiceId: "eve",
       voiceSpeed: 1.0,
     },
   });
+
+  const grokVoices = ["eve", "ara", "rex", "sal", "leo"] as const;
+  type GrokVoiceId = (typeof grokVoices)[number];
+
+  const normalizeVoiceId = (voiceId?: string): GrokVoiceId => {
+    const legacy: Record<string, GrokVoiceId> = {
+      alloy: "eve",
+      ash: "rex",
+      ballad: "ara",
+      coral: "sal",
+      echo: "leo",
+      fable: "ara",
+      nova: "eve",
+      onyx: "rex",
+      sage: "rex",
+      shimmer: "eve",
+      verse: "ara",
+    };
+    if (voiceId && (grokVoices as readonly string[]).includes(voiceId)) {
+      return voiceId as GrokVoiceId;
+    }
+    return legacy[voiceId || ""] || "eve";
+  };
 
   // Get current AI settings
   const { data: settings, isLoading } = useQuery<{
@@ -68,14 +91,16 @@ export default function AISettings() {
       } catch {
         keywords = [];
       }
+
+      const rawSpeed = settings.voiceSpeed ? parseFloat(settings.voiceSpeed.toString()) : 1.0;
       
       form.reset({
         aiName: settings.aiName || "AI Assistant",
         personalityKeywords: keywords,
         autoSuggestions: settings.autoSuggestions ?? true,
         voiceEnabled: settings.voiceEnabled ?? false,
-        voiceId: (settings.voiceId as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer") || "alloy",
-        voiceSpeed: settings.voiceSpeed ? parseFloat(settings.voiceSpeed.toString()) : 1.0,
+        voiceId: normalizeVoiceId(settings.voiceId),
+        voiceSpeed: Math.min(1.5, Math.max(0.7, rawSpeed)),
       });
     }
   }, [settings]);
@@ -128,7 +153,7 @@ export default function AISettings() {
       personalityKeywords: [],
       autoSuggestions: true,
       voiceEnabled: false,
-      voiceId: "alloy",
+      voiceId: "eve",
       voiceSpeed: 1.0,
     });
     setKeywordInput("");
@@ -361,14 +386,11 @@ export default function AISettings() {
                           <FormControl>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                               {[
-                                { value: "alloy", label: "Alloy", desc: "Neutral and balanced" },
-                                { value: "ash", label: "Ash", desc: "Warm male voice" },
-                                { value: "ballad", label: "Ballad", desc: "Expressive and warm" },
-                                { value: "coral", label: "Coral", desc: "British accent" },
-                                { value: "echo", label: "Echo", desc: "Smooth and confident" },
-                                { value: "sage", label: "Sage", desc: "Deep and wise" },
-                                { value: "shimmer", label: "Shimmer", desc: "Clear and articulate" },
-                                { value: "verse", label: "Verse", desc: "British and refined" },
+                                { value: "eve", label: "Eve", desc: "Clear and versatile" },
+                                { value: "ara", label: "Ara", desc: "Warm and expressive" },
+                                { value: "rex", label: "Rex", desc: "Confident male voice" },
+                                { value: "sal", label: "Sal", desc: "Smooth and natural" },
+                                { value: "leo", label: "Leo", desc: "Deep and steady" },
                               ].map((voice) => (
                                 <button
                                   key={voice.value}
@@ -403,15 +425,15 @@ export default function AISettings() {
                         <FormItem>
                           <FormLabel>Voice Speed</FormLabel>
                           <FormDescription>
-                            Adjust the speaking pace (0.25x - 4.0x)
+                            Adjust the speaking pace (0.7x - 1.5x)
                           </FormDescription>
                           <div className="flex items-center space-x-4">
                             <span className="text-sm text-gray-600">Slower</span>
                             <input
                               type="range"
-                              min="0.25"
-                              max="4"
-                              step="0.25"
+                              min="0.7"
+                              max="1.5"
+                              step="0.1"
                               value={field.value}
                               onChange={(e) => field.onChange(parseFloat(e.target.value))}
                               className="flex-1"
