@@ -1,14 +1,10 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useRef } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, MessageCircle, X, User, Loader2, Mic } from "lucide-react";
+import { Bot, X, User, Loader2, Mic } from "lucide-react";
 import AISearchBar from "./ai-search-bar";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import { useRef } from "react";
 import VoiceChat from "./voice-chat";
 
 interface ChatMessage {
@@ -25,10 +21,6 @@ export default function AIFab() {
   const [isMuted, setIsMuted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const streamingAssistantIdRef = useRef<string | null>(null);
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-
-  // No longer need voice refs - VoiceChat component handles this
 
   // Get AI settings for voice configuration
   const { data: aiSettings } = useQuery<{
@@ -42,6 +34,12 @@ export default function AIFab() {
   });
 
   const aiName = aiSettings?.aiName || "AI Assistant";
+  const settingsVersion = [
+    aiSettings?.aiName ?? "",
+    aiSettings?.personalityKeywords ?? "",
+    aiSettings?.voiceId ?? "",
+    aiSettings?.voiceSpeed ?? "",
+  ].join("|");
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -197,10 +195,6 @@ export default function AIFab() {
     chatMutation.mutate(message);
   };
 
-  const openAIAssistant = () => {
-    setLocation("/ai-assistant");
-  };
-
   const clearChat = () => {
     streamingAssistantIdRef.current = null;
     setMessages([]);
@@ -261,14 +255,51 @@ export default function AIFab() {
 
   return (
     <>
+      {/* Voice stays mounted outside the dialog so sessions survive close + page navigations */}
+      <VoiceChat
+        isEnabled={isVoiceEnabled}
+        isMuted={isMuted}
+        settingsVersion={settingsVersion}
+        onVoiceMessage={handleVoiceMessage}
+        onConnectionChange={(connected) => {
+          setIsVoiceConnected(connected);
+          if (!isVoiceEnabled && connected) {
+            setIsVoiceConnected(false);
+          }
+        }}
+      />
+
       {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-40">
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
+        {isVoiceEnabled && !isOpen && (
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            className="flex items-center gap-2 rounded-full border border-electric-blue/20 bg-white/95 px-3 py-1.5 text-xs font-medium text-electric-blue shadow-md backdrop-blur dark:bg-gray-900/95"
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                isVoiceConnected ? "bg-green-500 animate-pulse" : "bg-yellow-500"
+              }`}
+            />
+            {isVoiceConnected
+              ? isMuted
+                ? "Voice muted — tap to open"
+                : "Voice live — tap to open"
+              : "Connecting voice..."}
+          </button>
+        )}
         <Button
           onClick={() => setIsOpen(true)}
-          className="w-14 h-14 rounded-full bg-electric-blue hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-target"
+          className={`w-14 h-14 rounded-full text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-target ${
+            isVoiceEnabled
+              ? "bg-green-600 hover:bg-green-700 ring-4 ring-green-400/30"
+              : "bg-electric-blue hover:bg-blue-600"
+          }`}
           size="icon"
+          title={isVoiceEnabled ? "AI voice active" : "Open AI assistant"}
         >
-          <Bot className="w-6 h-6" />
+          {isVoiceEnabled ? <Mic className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
         </Button>
       </div>
 
@@ -455,21 +486,6 @@ export default function AIFab() {
               </div>
             )}
             
-            {/* Voice Chat Component - always rendered but only connects when enabled */}
-            <div className="hidden" key="voice-chat-singleton">
-              <VoiceChat 
-                isEnabled={isVoiceEnabled}
-                isMuted={isMuted}
-                onVoiceMessage={handleVoiceMessage}
-                onConnectionChange={(connected) => {
-                  setIsVoiceConnected(connected);
-                  if (!isVoiceEnabled && connected) {
-                    setIsVoiceConnected(false);
-                  }
-                }}
-              />
-            </div>
-
             {/* Search Input */}
             <div className="border-t border-gray-100 dark:border-gray-800 pt-4 mt-4">
               <AISearchBar 

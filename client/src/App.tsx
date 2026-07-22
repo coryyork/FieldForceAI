@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { ThemeProvider } from "@/hooks/use-theme";
+import AIFab from "@/components/ai/ai-fab";
 import AuthPage from "@/pages/auth-page";
 import Onboarding from "@/pages/onboarding";
 import Dashboard from "@/pages/dashboard";
@@ -24,6 +25,15 @@ import TeamPage from "@/pages/team";
 import InvitationPage from "@/pages/invitation";
 import Analytics from "@/pages/analytics";
 import NotFound from "@/pages/not-found";
+
+function isPublicPath(path: string) {
+  return (
+    path === "/auth" ||
+    path.startsWith("/invitation/") ||
+    path === "/jobs" ||
+    path.startsWith("/jobs/")
+  );
+}
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -67,6 +77,18 @@ function Router() {
   );
 }
 
+/** Persistent AI widget — stays mounted across authenticated page navigations so voice sessions survive. */
+function PersistentAIFab() {
+  const { user, isLoading } = useAuth();
+  const [location] = useLocation();
+
+  if (isLoading || !user?.companyId || isPublicPath(location)) {
+    return null;
+  }
+
+  return <AIFab />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -75,6 +97,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Router />
+            <PersistentAIFab />
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>

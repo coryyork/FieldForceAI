@@ -15,7 +15,7 @@ export function buildAssistantIdentity(settings?: AISettings): string {
   const keywords = parsePersonalityKeywords(settings);
   const personality =
     keywords.length > 0
-      ? `Your personality traits: ${keywords.join(", ")}. `
+      ? `Your personality traits are: ${keywords.join(", ")}. Embody these traits in every reply — tone, word choice, and energy should clearly reflect them. `
       : "You are professional, friendly, and action-oriented. ";
 
   return `Your name is ${name}. You are an AI assistant for Field Force, a business management platform. ${personality}When asked for your name, respond with "${name}".`;
@@ -47,31 +47,28 @@ Always use the search_knowledge_base tool when the user asks about:
 Provide helpful, conversational spoken responses based on actual data from their knowledge base.`;
 }
 
-/** Grok Voice Agent API supports 0.7–1.5 */
+/** OpenAI Realtime handles voice pacing from instructions; keep this for saved settings compatibility. */
 export function getVoiceSpeed(settings?: AISettings): number {
   const speed = settings?.voiceSpeed ? parseFloat(settings.voiceSpeed.toString()) : 1.0;
   return Math.min(1.5, Math.max(0.7, speed));
 }
 
-const GROK_VOICES = new Set(["eve", "ara", "rex", "sal", "leo"]);
+const OPENAI_REALTIME_VOICES = new Set(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"]);
 
-/** Map legacy OpenAI Realtime voice IDs to Grok voices. */
-const OPENAI_TO_GROK_VOICE: Record<string, string> = {
-  alloy: "eve",
-  ash: "rex",
-  ballad: "ara",
-  coral: "sal",
-  echo: "leo",
-  fable: "ara",
-  nova: "eve",
-  onyx: "rex",
-  sage: "rex",
-  shimmer: "eve",
-  verse: "ara",
+/** Map the current UI voice choices back to valid OpenAI Realtime voices. */
+const UI_TO_OPENAI_VOICE: Record<string, string> = {
+  eve: "alloy",
+  ara: "shimmer",
+  rex: "ash",
+  sal: "coral",
+  leo: "echo",
+  fable: "shimmer",
+  nova: "shimmer",
+  onyx: "ash",
 };
 
 export function getVoiceId(settings?: AISettings): string {
-  const requested = (settings?.voiceId || "eve").toLowerCase();
-  if (GROK_VOICES.has(requested)) return requested;
-  return OPENAI_TO_GROK_VOICE[requested] || "eve";
+  const requested = (settings?.voiceId || "alloy").toLowerCase();
+  if (OPENAI_REALTIME_VOICES.has(requested)) return requested;
+  return UI_TO_OPENAI_VOICE[requested] || "alloy";
 }

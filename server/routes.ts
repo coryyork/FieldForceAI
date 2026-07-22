@@ -781,13 +781,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User not associated with a company" });
       }
 
+      const voiceSpeedRaw = req.body.voiceSpeed;
+      const voiceSpeedNum =
+        voiceSpeedRaw === undefined || voiceSpeedRaw === null || voiceSpeedRaw === ""
+          ? 1
+          : Number(voiceSpeedRaw);
+      const clampedSpeed = Number.isFinite(voiceSpeedNum)
+        ? Math.min(1.5, Math.max(0.7, voiceSpeedNum))
+        : 1;
+
       const settingsData = {
         aiName: req.body.aiName,
         personalityKeywords: req.body.personalityKeywords,
         autoSuggestions: req.body.autoSuggestions,
         voiceEnabled: req.body.voiceEnabled,
         voiceId: req.body.voiceId,
-        voiceSpeed: req.body.voiceSpeed,
+        voiceSpeed: clampedSpeed.toFixed(2),
       };
 
       const settings = await storage.upsertAISettings(user.companyId, settingsData);

@@ -29,7 +29,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { StageSelector, type CandidateStage } from "@/components/recruitment/stage-selector";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import AIFab from "@/components/ai/ai-fab";
 import { useAuth } from "@/hooks/use-auth";
 
 interface CandidateWithJobDetails {
@@ -142,7 +141,6 @@ export default function CandidateDetails() {
             </div>
           </main>
         </div>
-        <AIFab />
       </div>
     );
   }
@@ -168,7 +166,6 @@ export default function CandidateDetails() {
             </div>
           </main>
         </div>
-        <AIFab />
       </div>
     );
   }
@@ -452,7 +449,6 @@ export default function CandidateDetails() {
           </div>
         </main>
       </div>
-      <AIFab />
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { useToast } from "@/hooks/use-toast";
 interface VoiceChatProps {
   isEnabled: boolean;
   isMuted?: boolean;
+  /** When this changes while voice is on, reconnect so new AI settings apply. */
+  settingsVersion?: string;
   onVoiceMessage?: (message: { role: "user" | "assistant"; text: string; isFinal: boolean }) => void;
   onConnectionChange?: (connected: boolean) => void;
 }
@@ -11,6 +13,7 @@ interface VoiceChatProps {
 export default function VoiceChat({ 
   isEnabled, 
   isMuted = false,
+  settingsVersion = "",
   onVoiceMessage,
   onConnectionChange,
 }: VoiceChatProps) {
@@ -24,6 +27,9 @@ export default function VoiceChat({
   const processorRef = useRef<AudioWorkletNode | null>(null);
   const isMutedRef = useRef(isMuted);
   const assistantTranscriptRef = useRef("");
+  const settingsVersionRef = useRef(settingsVersion);
+  const connectToVoiceAPIRef = useRef<() => Promise<void>>(async () => {});
+  const disconnectVoiceRef = useRef<() => void>(() => {});
 
   // Initialize WebSocket connection to Grok Voice via backend proxy
   const connectToVoiceAPI = async () => {
@@ -387,35 +393,47 @@ export default function VoiceChat({
     }
   }, [isMuted]);
 
-  // Auto-connect when enabled
+  connectToVoiceAPIRef.current = connectToVoiceAPI;
+  disconnectVoiceRef.current = disconnectVoice;
+
+  // Keep the voice session alive across dialog open/close and page navigations.
+  // Only tear down when voice is disabled or this singleton unmounts (logout / public route).
   useEffect(() => {
-    console.log("Voice effect triggered - isEnabled:", isEnabled, "isConnected:", isConnected);
-    
     if (isEnabled) {
-      if (!isConnected && !wsRef.current) {
+      if (!wsRef.current) {
         console.log("Auto-connecting to voice...");
-        connectToVoiceAPI();
+        void connectToVoiceAPIRef.current();
       }
-    } else {
-      // Always disconnect when disabled, regardless of connection state
-      if (wsRef.current || mediaStreamRef.current || audioContextRef.current) {
-        console.log("Auto-disconnecting voice...");
-        disconnectVoice();
-      }
+      return;
     }
-    
-    // Cleanup on unmount
-    return () => {
-      console.log("VoiceChat component unmounting, cleaning up...");
-      disconnectVoice();
-    };
+
+    if (wsRef.current || mediaStreamRef.current || audioContextRef.current) {
+      console.log("Auto-disconnecting voice...");
+      disconnectVoiceRef.current();
+    }
   }, [isEnabled]);
+
+  // Re-apply personality / voice / speed by reconnecting when saved settings change.
+  useEffect(() => {
+    if (settingsVersionRef.current === settingsVersion) return;
+    settingsVersionRef.current = settingsVersion;
+
+    if (!isEnabled || !wsRef.current) return;
+
+    console.log("AI settings changed — refreshing voice session");
+    disconnectVoiceRef.current();
+    void connectToVoiceAPIRef.current();
+  }, [settingsVersion, isEnabled]);
+
+  useEffect(() => {
+    return () => {
+      disconnectVoiceRef.current();
+    };
+  }, []);
   
   // Notify parent of connection changes
   useEffect(() => {
-    if (onConnectionChange) {
-      onConnectionChange(isConnected);
-    }
+    onConnectionChange?.(isConnected);
   }, [isConnected, onConnectionChange]);
 
   return null;

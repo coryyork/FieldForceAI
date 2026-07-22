@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import AIFab from "@/components/ai/ai-fab";
 import DocumentUpload from "@/components/knowledge-base/document-upload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -224,7 +223,6 @@ export default function KnowledgeBase() {
       </div>
       
       {/* AI Floating Action Button */}
-      <AIFab />
     </div>
   );
 }

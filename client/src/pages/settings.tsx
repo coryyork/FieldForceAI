@@ -4,7 +4,6 @@ import { Settings as SettingsIcon, Brain, User, Shield, Bell, Users } from "luci
 import { Link } from "wouter";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import AIFab from "@/components/ai/ai-fab";
 import { useAuth } from "@/hooks/use-auth";
 
 const settingsCategories = [
@@ -125,7 +124,6 @@ export default function Settings() {
           </div>
         </main>
       </div>
-      <AIFab />
     </div>
   );
 }

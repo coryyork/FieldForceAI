@@ -34,7 +34,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { StageBadge, type CandidateStage } from "@/components/recruitment/stage-selector";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import AIFab from "@/components/ai/ai-fab";
 import { useAuth } from "@/hooks/use-auth";
 
 interface CandidateWithJobDetails {
@@ -168,7 +167,6 @@ export default function Candidates() {
             </div>
           </main>
         </div>
-        <AIFab />
       </div>
     );
   }
@@ -335,7 +333,6 @@ export default function Candidates() {
           </div>
         </main>
       </div>
-      <AIFab />
     </div>
   );
 }

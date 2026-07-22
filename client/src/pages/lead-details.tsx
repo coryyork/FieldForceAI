@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import AIFab from "@/components/ai/ai-fab";
 import LeadTasks from "@/components/leads/lead-tasks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -372,7 +371,6 @@ export default function LeadDetails() {
       </div>
       
       {/* AI Floating Action Button */}
-      <AIFab />
 
       {/* Edit Lead Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

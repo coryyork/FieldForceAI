@@ -3,10 +3,10 @@ import { IncomingMessage } from 'http';
 import { AIService } from './aiService';
 import { storage } from '../storage';
 import { AI_MODELS } from '../config/aiModels';
-import { buildVoiceInstructions, getVoiceId, getVoiceSpeed } from './aiPrompts';
+import { buildVoiceInstructions, getVoiceId } from './aiPrompts';
 
-const XAI_REALTIME_URL = `wss://api.x.ai/v1/realtime?model=${AI_MODELS.realtime}`;
-const XAI_API_KEY = process.env.XAI_API_KEY;
+const OPENAI_REALTIME_URL = `wss://api.openai.com/v1/realtime?model=${AI_MODELS.realtime}`;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const aiService = new AIService();
 
@@ -35,7 +35,7 @@ export function handleVoiceWebSocket(ws: WebSocket, request: IncomingMessage, us
   
   const messageQueue: any[] = [];
 
-  connectToGrok(session, messageQueue);
+  connectToOpenAI(session, messageQueue);
 
   ws.on('message', (message: string) => {
     try {
@@ -49,7 +49,7 @@ export function handleVoiceWebSocket(ws: WebSocket, request: IncomingMessage, us
       if (data.type === 'input_audio_buffer.append') {
         console.log('Received audio chunk from client, size:', data.audio?.length || 0);
       } else if (data.type === 'input_audio_buffer.commit') {
-        console.log('Committing audio buffer to Grok');
+        console.log('Committing audio buffer to OpenAI Realtime');
       } else {
         console.log('Received client message:', data.type);
       }
@@ -57,7 +57,7 @@ export function handleVoiceWebSocket(ws: WebSocket, request: IncomingMessage, us
       if (session.providerWs && session.providerWs.readyState === WebSocket.OPEN) {
         session.providerWs.send(JSON.stringify(data));
       } else {
-        console.log('Grok connection not ready, queueing message:', data.type);
+        console.log('OpenAI Realtime connection not ready, queueing message:', data.type);
         messageQueue.push(data);
       }
     } catch (error) {
@@ -84,11 +84,11 @@ export function handleVoiceWebSocket(ws: WebSocket, request: IncomingMessage, us
   });
 }
 
-function connectToGrok(session: VoiceSession, messageQueue: any[]) {
-  if (!XAI_API_KEY) {
+function connectToOpenAI(session: VoiceSession, messageQueue: any[]) {
+  if (!OPENAI_API_KEY) {
     session.clientWs.send(JSON.stringify({
       type: 'error',
-      error: 'XAI API key not configured. Set XAI_API_KEY to enable Grok voice.'
+      error: 'OpenAI API key not configured. Set OPENAI_API_KEY to enable OpenAI Realtime.'
     }));
     return;
   }
@@ -97,37 +97,32 @@ function connectToGrok(session: VoiceSession, messageQueue: any[]) {
     const aiSettings = await storage.getAISettings(session.companyId);
 
     try {
-      const providerWs = new WebSocket(XAI_REALTIME_URL, {
+      const providerWs = new WebSocket(OPENAI_REALTIME_URL, {
         headers: {
-          'Authorization': `Bearer ${XAI_API_KEY}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'OpenAI-Beta': 'realtime=v1',
         }
       });
 
       session.providerWs = providerWs;
 
       providerWs.on('open', () => {
-        console.log(`Connected to Grok Voice API (${AI_MODELS.realtime})`);
+        console.log(`Connected to OpenAI Realtime API (${AI_MODELS.realtime})`);
 
         const sessionConfig = {
           type: 'session.update',
           session: {
+            modalities: ['text', 'audio'],
             voice: getVoiceId(aiSettings),
             instructions: buildVoiceInstructions(aiSettings),
+            input_audio_format: 'pcm16',
+            output_audio_format: 'pcm16',
+            input_audio_transcription: { model: 'whisper-1' },
             turn_detection: {
               type: 'server_vad',
               threshold: 0.5,
               prefix_padding_ms: 300,
               silence_duration_ms: 500,
-            },
-            audio: {
-              input: {
-                format: { type: 'audio/pcm', rate: 24000 },
-                transcription: { model: 'grok-transcribe' },
-              },
-              output: {
-                format: { type: 'audio/pcm', rate: 24000 },
-                speed: getVoiceSpeed(aiSettings),
-              },
             },
             tools: [
               {
@@ -174,16 +169,16 @@ function connectToGrok(session: VoiceSession, messageQueue: any[]) {
         const parsedMessage = JSON.parse(message);
         
         if (parsedMessage.type === 'session.created') {
-          console.log('Grok session created:', parsedMessage.session);
+          console.log('OpenAI Realtime session created:', parsedMessage.session);
         } else if (parsedMessage.type === 'session.updated') {
-          console.log('Grok session updated successfully');
+          console.log('OpenAI Realtime session updated successfully');
         } else if (parsedMessage.type === 'input_audio_buffer.speech_started') {
-          console.log('Speech detected by Grok');
+          console.log('Speech detected by OpenAI Realtime');
           session.clientWs.send(JSON.stringify({
             type: 'speech_started'
           }));
         } else if (parsedMessage.type === 'input_audio_buffer.speech_stopped') {
-          console.log('Speech stopped, Grok processing...');
+          console.log('Speech stopped, OpenAI Realtime processing...');
         } else if (parsedMessage.type === 'input_audio_buffer.committed') {
           console.log('Audio buffer committed');
         } else if (
@@ -263,7 +258,7 @@ function connectToGrok(session: VoiceSession, messageQueue: any[]) {
                 }
               };
               
-              console.log('Sending function output to Grok:', functionOutput);
+              console.log('Sending function output to OpenAI Realtime:', functionOutput);
               providerWs.send(JSON.stringify(functionOutput));
               providerWs.send(JSON.stringify({ type: 'response.create' }));
               
@@ -308,21 +303,21 @@ function connectToGrok(session: VoiceSession, messageQueue: any[]) {
             role: 'assistant'
           }));
         } else if (parsedMessage.type === 'error') {
-          console.error('Grok voice error:', parsedMessage.error);
+          console.error('OpenAI Realtime error:', parsedMessage.error);
           session.clientWs.send(JSON.stringify({
             type: 'error',
-            error: parsedMessage.error?.message || 'Grok Voice API error'
+            error: parsedMessage.error?.message || 'OpenAI Realtime API error'
           }));
         } else {
           session.clientWs.send(message);
         }
       } catch (error) {
-        console.error('Error processing Grok message:', error);
+        console.error('Error processing OpenAI Realtime message:', error);
       }
     });
 
     providerWs.on('error', (error) => {
-      console.error('Grok WebSocket error:', error);
+      console.error('OpenAI Realtime WebSocket error:', error);
       session.clientWs.send(JSON.stringify({
         type: 'error',
         error: 'Connection to voice service failed'
@@ -330,7 +325,7 @@ function connectToGrok(session: VoiceSession, messageQueue: any[]) {
     });
 
     providerWs.on('close', (code, reason) => {
-      console.log(`Grok connection closed, code: ${code}, reason: ${reason}`);
+      console.log(`OpenAI Realtime connection closed, code: ${code}, reason: ${reason}`);
       if (session.clientWs.readyState === WebSocket.OPEN) {
         session.clientWs.send(JSON.stringify({
           type: 'connection',
@@ -340,7 +335,7 @@ function connectToGrok(session: VoiceSession, messageQueue: any[]) {
     });
 
     } catch (error) {
-      console.error('Failed to connect to Grok Voice:', error);
+      console.error('Failed to connect to OpenAI Realtime:', error);
       session.clientWs.send(JSON.stringify({
         type: 'error',
         error: 'Failed to establish voice connection'

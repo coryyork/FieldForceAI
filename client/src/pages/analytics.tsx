@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import AIFab from "@/components/ai/ai-fab";
 import MetricCard from "@/components/dashboard/metric-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Lead, Task, JobApplication, JobOpening } from "@shared/schema";
@@ -349,7 +348,6 @@ export default function Analytics() {
         </main>
       </div>
 
-      <AIFab />
     </div>
   );
 }

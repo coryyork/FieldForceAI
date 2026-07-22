@@ -7,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import AIFab from "@/components/ai/ai-fab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -107,14 +106,15 @@ export default function AISettings() {
 
   const mutation = useMutation({
     mutationFn: async (data: AISettingsData) => {
-      const response = await apiRequest("/api/ai-settings", {
-        method: "POST",
-        body: {
-          ...data,
-          personalityKeywords: JSON.stringify(data.personalityKeywords),
-        },
+      const response = await apiRequest("POST", "/api/ai-settings", {
+        aiName: data.aiName,
+        personalityKeywords: JSON.stringify(data.personalityKeywords),
+        autoSuggestions: data.autoSuggestions,
+        voiceEnabled: data.voiceEnabled,
+        voiceId: data.voiceId,
+        voiceSpeed: String(data.voiceSpeed),
       });
-      return response;
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ai-settings"] });
@@ -137,7 +137,10 @@ export default function AISettings() {
       }
       toast({
         title: "Error",
-        description: "Failed to update AI settings. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update AI settings. Please try again.",
         variant: "destructive",
       });
     },
@@ -482,7 +485,6 @@ export default function AISettings() {
           </div>
         </div>
       </div>
-      <AIFab />
     </div>
   );
 }

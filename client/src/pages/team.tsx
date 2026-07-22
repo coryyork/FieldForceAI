@@ -2,7 +2,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import AIFab from "@/components/ai/ai-fab";
 import TeamManagement from "@/components/team/team-management";
 
 export default function TeamPage() {
@@ -34,7 +33,6 @@ export default function TeamPage() {
           </div>
         </main>
       </div>
-      <AIFab />
     </div>
   );
 }
