@@ -10,6 +10,7 @@ import AIFab from "@/components/ai/ai-fab";
 import AuthPage from "@/pages/auth-page";
 import Onboarding from "@/pages/onboarding";
 import Dashboard from "@/pages/dashboard";
+import Landing from "@/pages/landing";
 import CRM from "@/pages/crm";
 import LeadDetails from "@/pages/lead-details";
 import AIAssistant from "@/pages/ai-assistant";
@@ -57,8 +58,10 @@ function Router() {
       <Route path="/jobs" component={JobPortal} />
       <Route path="/jobs/:jobId" component={JobPortal} />
       
+      {/* Public landing for visitors, dashboard for signed-in users */}
+      <Route path="/">{user ? <Dashboard /> : <Landing />}</Route>
+
       {/* Protected routes - require authentication */}
-      <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/sales" component={CRM} />
       <ProtectedRoute path="/sales/lead/:id" component={LeadDetails} />
       <ProtectedRoute path="/ai-assistant" component={AIAssistant} />
