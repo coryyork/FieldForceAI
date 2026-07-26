@@ -94,9 +94,9 @@ function connectToOpenAI(session: VoiceSession, messageQueue: any[]) {
   }
 
   void (async () => {
-    const aiSettings = await storage.getAISettings(session.companyId);
-
     try {
+      const aiSettings = await storage.getAISettings(session.companyId);
+
       const providerWs = new WebSocket(OPENAI_REALTIME_URL, {
         headers: {
           'Authorization': `Bearer ${OPENAI_API_KEY}`,
