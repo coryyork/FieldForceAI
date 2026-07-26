@@ -18,7 +18,7 @@ export function buildAssistantIdentity(settings?: AISettings): string {
       ? `Your personality traits are: ${keywords.join(", ")}. Embody these traits in every reply — tone, word choice, and energy should clearly reflect them. `
       : "You are professional, friendly, and action-oriented. ";
 
-  return `Your name is ${name}. You are an AI assistant for Field Force, a business management platform. ${personality}When asked for your name, respond with "${name}".`;
+  return `Your name is ${name}. You are an AI assistant for Field Army, a business management platform. ${personality}When asked for your name, respond with "${name}".`;
 }
 
 export function buildVoiceInstructions(settings?: AISettings): string {

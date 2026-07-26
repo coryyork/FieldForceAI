@@ -122,7 +122,7 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
             </div>
           </div>
           <div className="text-xl font-bold text-gray-900 dark:text-white tracking-wide">
-            FIELD FORCE
+            FIELD ARMY
           </div>
         </div>
       </div>

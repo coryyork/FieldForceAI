@@ -46,7 +46,7 @@ export default function JobPortal() {
   });
 
   // Get company name from the first job opening (since they're all from the same company)
-  const companyName = jobOpenings.length > 0 ? jobOpenings[0].companyName : "Field Force";
+  const companyName = jobOpenings.length > 0 ? jobOpenings[0].companyName : "Field Army";
 
   // Submit job application mutation
   const submitApplicationMutation = useMutation({

@@ -80,7 +80,7 @@ export default function Landing() {
               <Zap className="w-6 h-6 text-white" />
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">
-              FIELD FORCE
+              FIELD ARMY
             </div>
           </div>
           <Link href="/auth">
@@ -105,7 +105,7 @@ export default function Landing() {
               </span>
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-              Field Force unifies your CRM, recruitment pipeline, and company
+              Field Army unifies your CRM, recruitment pipeline, and company
               knowledge — then puts a voice-enabled AI assistant on top of all
               of it. Sell, hire, and deliver without switching tools.
             </p>
@@ -132,7 +132,7 @@ export default function Landing() {
               </Button>
             </div>
             <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-              Field Force is invite-only — ask your administrator for an invitation.
+              Field Army is invite-only — ask your administrator for an invitation.
             </p>
           </div>
         </section>
@@ -199,7 +199,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="container mx-auto px-4 py-8 border-t">
         <div className="text-center text-gray-600 dark:text-gray-400">
-          <p>&copy; {new Date().getFullYear()} Field Force. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Field Army. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -96,7 +96,7 @@ export default function AuthPage() {
       <div className="hidden lg:flex items-center justify-center bg-muted p-8">
         <div className="max-w-lg space-y-8">
           <div>
-            <h1 className="text-4xl font-bold mb-4">Field Force 2</h1>
+            <h1 className="text-4xl font-bold mb-4">Field Army</h1>
             <p className="text-lg text-muted-foreground">
               Your all-in-one business platform for managing leads, recruitment, and AI-powered insights
             </p>

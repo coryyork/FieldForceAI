@@ -33,7 +33,7 @@ export default function Onboarding() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
-        title: "Welcome to Field Force!",
+        title: "Welcome to Field Army!",
         description: "Your organization workspace has been created successfully.",
       });
       // Redirect to dashboard
@@ -62,7 +62,7 @@ export default function Onboarding() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-            Welcome to Field Force
+            Welcome to Field Army
           </CardTitle>
           <CardDescription>
             Let's set up your organization workspace to get started.
